@@ -444,6 +444,44 @@ Set by looking at real data across all 1,396, not guessed:
 
 ---
 
+## 13 · The eval harness
+
+`scripts/eval.py` is a curated golden set that checks each measurement against
+the reading a human would **independently** expect — labels written from
+judgment, not copied from the output, so an agreement means the measure agrees
+with judgment and a disagreement is a finding to investigate (the measure may be
+wrong, or the label may be). It runs against `data/results_dip.json`, reports
+agree/total per measure plus every disagreement with the actual value, and exits
+non-zero if anything disagrees (so it can gate a build).
+
+- **34 companies, ~60 assertions**, spanning all ten in-scope sectors (Real
+  Estate is out of scope — REITs are excluded) and **17 named data-hazards** from
+  [`docs/data-hazards.md`](data-hazards.md): dual-class (V, GOOGL), buyback →
+  negative equity (AZO, MO, MCD), financials capital-basis (JPM, GS), former-CIK
+  reorg (XOM, BLK), spin-offs (KVUE, GEV), utilities cash-gate (NEE, DUK), the
+  M5/M7 division of labor (INTC).
+- **Both poles for every measure**: e.g. M7 clears (compounders) / below
+  (airlines, Boeing) / unavailable (reorgs, spin-offs); M5 held_up / declining;
+  M6 cheap (PYPL) / expensive (AAPL). Two deliberate contrasts anchor the set —
+  **PYPL** (fell big, recovers, sound, cheap: the opportunity) vs **NKE** (fell
+  big, cheap, but declining: the value trap) — same cheap-and-fallen signal,
+  opposite verdict, with M5 as the discriminator.
+- **Two findings on first run, both label errors, both documented in the file:**
+  (1) Eli Lilly reads Solid not High because the consistency floor catches a real
+  balance-sheet soft spot (Debt/equity and Current ratio weak vs pharma peers) —
+  reputation said High, the evidence said Solid. (2) Intel clears the hoarding
+  floor because M7 is the *long-run* structural floor (profitable 80% of the
+  decade, coverage 22.7×) and the current collapse (net income −278% YoY) is M5's
+  job, which correctly reads *declining*. M7 is not a recency gate; M5 is.
+
+Run it after any pull with `scripts/run_dip.py`:
+
+```
+code/vantage/.venv/bin/python scripts/eval.py
+```
+
+---
+
 ## Credits
 
 Index constituents from S&P Dow Jones Indices via public listings.
