@@ -176,10 +176,13 @@ long-tenured companies for merely having lived more years in which to have a
 bad one. A fixed decade judges every company on the same span, still spans a
 full cycle (2015–2025 includes the COVID shock), and reflects the business now.
 
-**Peers, coverage, and the honest gaps.** Peers are the **GICS sector** for
-now; the finer levels (industry group → sub-industry) that give truer peers — a
-bank ranked against banks, not against payment networks — are the planned
-refinement. The ratio set was vetted on the real pull: the XBRL fallback chains
+**Peers, coverage, and the honest gaps.** Peers are the **finest GICS level
+with enough members**: each company is ranked in its **GICS sub-industry**
+wherever that group has at least a handful of members in a given ratio-year,
+falling back to its **sector** otherwise — about 89% of companies rank at the
+sub-industry level. This is what lets a bank be judged against banks
+(JPMorgan against *diversified banks*, not against payment networks and
+exchanges). The ratio set was vetted on the real pull: the XBRL fallback chains
 are **verified complete** (every alias that would raise coverage was examined
 and rejected as a *different* concept — e.g. `InterestPaidNet` is cash-flow
 interest, not P&L interest expense; `RepaymentsOfLongTermDebt` is a cash-flow
@@ -189,7 +192,7 @@ Coverage is strong — the median company computes all nine ratios across all te
 years. A company is scored only on the ratios it reports, **never a defaulted
 blank**; where a ratio or year is missing, the panel shows it (ratios /
 dimensions / years covered) rather than hiding it, and companies too thin to
-rank are flagged *limited data*. `[calibrate: tier cutoffs; finer-GICS peers]`
+rank are flagged *limited data*. `[calibrate: tier cutoffs]`
 
 ### 4.5 · M5 — Fundamentals status *(Good business?, part 2 — the mispricing test)* — **proposed**
 

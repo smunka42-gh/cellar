@@ -97,9 +97,12 @@ def _constituents(url: str) -> list[dict]:
             break
     else:
         raise RuntimeError(f"no constituent table found at {url}")
+    # the same table also carries GICS Sub-Industry — the finest peer level
+    sub_col = next((c for c in cols if "sub-industry" in c.lower() or "sub industry" in c.lower()), None)
     return [{"ticker": str(r["Symbol"]).strip().replace(".", "-"),
              "name": str(r["Security"]).strip(),
-             "sector": str(r["GICS Sector"]).strip()}
+             "sector": str(r["GICS Sector"]).strip(),
+             "sub_industry": (str(r[sub_col]).strip() if sub_col else "")}
             for _, r in table.iterrows()]
 
 

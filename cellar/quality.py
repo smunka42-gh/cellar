@@ -27,7 +27,7 @@ import numpy as np
 from cellar import facts
 
 WINDOW = list(range(2016, 2026))   # last ten fiscal years — a full cycle, comparable across firms
-MIN_PEERS = 5                      # a sector-year-ratio cell needs this many peers to rank against
+MIN_PEERS = 5                      # a peer cell (sub-industry, else sector) needs this many members to rank
 MIN_YEARS = 3                      # fewer composite years than this → "limited data", no tier
 
 # ── Fallback chains (verified complete on the pull) ────────────────────────────
@@ -105,36 +105,50 @@ def all_quality(rows: list[dict]) -> dict[str, dict]:
     # Pass 1 — extract each company's ratio series from the cache.
     series = {r["ticker"]: _ratios(facts.load_facts(r["cik"])) for r in rows}
     sector = {r["ticker"]: r["sector"] for r in rows}
-    peer_n = {}
+    subind = {r["ticker"]: (r.get("sub_industry") or r["sector"]) for r in rows}
+    grp_n: dict[tuple, int] = {}
     for r in rows:
-        peer_n[r["sector"]] = peer_n.get(r["sector"], 0) + 1
+        grp_n[("sec", r["sector"])] = grp_n.get(("sec", r["sector"]), 0) + 1
+        grp_n[("sub", subind[r["ticker"]])] = grp_n.get(("sub", subind[r["ticker"]]), 0) + 1
 
-    # Pass 2 — pool peer values for every (ratio, year, sector) cell.
-    pools: dict[tuple, list] = {}
+    # Pass 2 — pool peer values for every (ratio, year) cell at BOTH peer levels:
+    # the fine GICS sub-industry and the coarse sector fallback.
+    pool_sub: dict[tuple, list] = {}
+    pool_sec: dict[tuple, list] = {}
     for t, rs in series.items():
-        sec = sector[t]
         for rt, ys in rs.items():
             for y, v in ys.items():
-                pools.setdefault((rt, y, sec), []).append(v)
+                pool_sub.setdefault((rt, y, subind[t]), []).append(v)
+                pool_sec.setdefault((rt, y, sector[t]), []).append(v)
 
     # Pass 3 — per company: percentile each ratio-year, build the yearly composite,
     # then level (median year) and consistency (worst year).
     out: dict[str, dict] = {}
     for r in rows:
-        t, sec, rs = r["ticker"], r["sector"], series[r["ticker"]]
+        t, sec, sub, rs = r["ticker"], r["sector"], subind[r["ticker"]], series[r["ticker"]]
         pct: dict[str, dict[int, float]] = {}     # ratio -> {year: percentile 0-100}
+        used = {"sub": 0, "sec": 0}               # which peer level each cell ranked at
         for rt, ys in rs.items():
             lower_better = rt in LOWER_BETTER
             pr = {}
             for y, v in ys.items():
-                pool = pools.get((rt, y, sec), [])
+                # finest peer group with enough members that year, else the sector
+                pool = pool_sub.get((rt, y, sub), [])
+                lvl = "sub"
                 if len(pool) < MIN_PEERS:
-                    continue
+                    pool, lvl = pool_sec.get((rt, y, sec), []), "sec"
+                    if len(pool) < MIN_PEERS:
+                        continue
                 rank = (sum(1 for x in pool if x >= v) if lower_better
                         else sum(1 for x in pool if x <= v))
                 pr[y] = rank / len(pool) * 100.0
+                used[lvl] += 1
             if pr:
                 pct[rt] = pr
+        # label the peer group by the level that carried most of the ranking
+        peer_level = "sub" if used["sub"] >= used["sec"] else "sec"
+        peer_group = sub if peer_level == "sub" else sec
+        peer_size = grp_n[(peer_level, peer_group)]
 
         # yearly composite = mean within each available dimension, then mean across dimensions
         yearly = {}
@@ -152,7 +166,7 @@ def all_quality(rows: list[dict]) -> dict[str, dict]:
         if n_years < MIN_YEARS:
             out[t] = {"available": False, "reason": "limited_data",
                       "n_ratios": len(pct), "n_dims": n_dims, "n_years": n_years,
-                      "peer_group": sec, "peer_n": peer_n[sec]}
+                      "peer_group": peer_group, "peer_n": peer_size}
             continue
 
         comp = list(yearly.values())
@@ -167,6 +181,6 @@ def all_quality(rows: list[dict]) -> dict[str, dict]:
             "tier": _tier(level, consistency),
             "ratio_level": ratio_level,
             "n_ratios": len(pct), "n_dims": n_dims, "n_years": n_years,
-            "peer_group": sec, "peer_n": peer_n[sec],
+            "peer_group": peer_group, "peer_n": peer_size, "peer_level": peer_level,
         }
     return out
