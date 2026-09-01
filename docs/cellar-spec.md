@@ -400,7 +400,11 @@ rate-limited); the cache lives under `data/` (gitignored).
 ## 11 · Data-quality guards and pitfalls
 
 Handled explicitly; a missing value is NA — never a proxy or a silent
-default.
+default. The full catalogue of corporate events that can corrupt the numbers —
+splits, buybacks, dilution, CIK reorgs, spin-offs, mergers, tag migrations,
+part-year filings, and more — with the measurements each threatens and how
+Cellar handles it, is in [`docs/data-hazards.md`](data-hazards.md). A summary
+of the load-bearing few:
 
 - **Unapplied splits** — a raw feed can leave a split unadjusted, faking a
   ~50% one-day fall; corrected (adjusted closes; split-repair on raw).
