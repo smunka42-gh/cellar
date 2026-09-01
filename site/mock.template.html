@@ -83,10 +83,11 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
   width:150px; transition:all .12s}
 .search:hover{border-color:var(--accent)}
 .search::placeholder{color:var(--faint)}
-.sortsel{border:1px solid var(--line); background:var(--surface); color:var(--muted);
-  padding:5px 12px; border-radius:999px; font-family:inherit; font-size:12.5px; font-weight:500;
-  cursor:pointer; transition:all .12s}
-.sortsel:hover{border-color:var(--accent); color:var(--ink)}
+.sorthint{color:var(--faint); font-size:12px; font-style:italic}
+th[data-sort]{cursor:pointer; user-select:none; transition:color .12s}
+th[data-sort]:hover{color:var(--accent)}
+th[data-sort].sorted{color:var(--accent)}
+th[data-sort].sorted::after{content:attr(data-arrow); margin-left:4px; font-size:9px; vertical-align:middle}
 .btn{border:1px solid var(--line); background:var(--surface); color:var(--ink);
   padding:7px 13px; border-radius:8px; font-size:12.5px; cursor:pointer; font-family:inherit; font-weight:500}
 .btn:hover{border-color:var(--accent)}
@@ -303,27 +304,21 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
 
   <div class="toolbar">
     <div class="filters">
-      <div class="fgroup"><span class="flabel">Fell?</span><div class="chips" data-dim="fell">
-        <button class="chip" data-v="Big">Big</button><button class="chip" data-v="Some">Some</button><button class="chip" data-v="Minimal">Minimal</button></div></div>
-      <div class="fgroup"><span class="flabel">Comes back?</span><div class="chips" data-dim="comeback">
-        <button class="chip" data-v="Strong">Strong</button><button class="chip" data-v="Past">Past floor</button><button class="chip" data-v="None">None</button></div></div>
-      <div class="fgroup"><span class="flabel">Cheap?</span><div class="chips" data-dim="cheap">
-        <button class="chip" data-v="Both">Both</button><button class="chip" data-v="Growing in">Growing in</button><button class="chip" data-v="Trap risk">Trap risk</button><button class="chip" data-v="Full">Full</button></div></div>
-      <div class="fgroup"><span class="flabel">Good business?</span><div class="chips" data-dim="business">
-        <button class="chip" data-v="High">High</button><button class="chip" data-v="Solid">Solid</button><button class="chip" data-v="Mixed">Mixed</button><button class="chip" data-v="Weak">Weak</button></div></div>
-      <div class="fgroup"><span class="flabel">Hoarding floor</span><div class="chips" data-dim="floor">
-        <button class="chip" data-v="Clears">Clears</button><button class="chip" data-v="Below">Below</button></div></div>
-      <div class="fgroup"><span class="flabel">Size</span><div class="chips" data-dim="cap">
-        <button class="chip" data-v="Mega">Mega</button><button class="chip" data-v="Large">Large</button><button class="chip" data-v="Mid">Mid</button><button class="chip" data-v="Small">Small</button></div></div>
+      <div class="fgroup"><span class="flabel" title="How far the price has fallen from its recent 3-year high (M1)">Fell?</span><div class="chips" data-dim="fell">
+        <button class="chip" data-v="Big" title="Down 20% or more from its recent 3-year high">Big</button><button class="chip" data-v="Some" title="Down 8–20% from its recent high">Some</button><button class="chip" data-v="Minimal" title="Down less than 8% — near its recent high">Minimal</button></div></div>
+      <div class="fgroup"><span class="flabel" title="Whether it reliably recovers from drops, and how deep (M2)">Comes back?</span><div class="chips" data-dim="comeback">
+        <button class="chip" data-v="Strong" title="Today's dip is within the depth it reliably recovers from">Strong</button><button class="chip" data-v="Past" title="It reliably recovers, but today's dip is deeper than that proven floor">Past floor</button><button class="chip" data-v="None" title="No reliable recovery record at any depth">None</button></div></div>
+      <div class="fgroup"><span class="flabel" title="Whether today is a genuine discount, on its own price and on its own earnings (M3 × M6)">Cheap?</span><div class="chips" data-dim="cheap">
+        <button class="chip" data-v="Both" title="Cheap on both its own price history and its own earnings — strongest">Both</button><button class="chip" data-v="Growing in" title="Price flat or up but earnings rising — growing into its price (a price-only view misses this)">Growing in</button><button class="chip" data-v="Trap risk" title="Price fell but earnings fell more — a possible value trap">Trap risk</button><button class="chip" data-v="Full" title="Fully priced — not a discount on price or earnings">Full</button></div></div>
+      <div class="fgroup"><span class="flabel" title="Relative quality vs its GICS peers, across nine fundamentals over the decade (M4)">Good business?</span><div class="chips" data-dim="business">
+        <button class="chip" data-v="High" title="Top-tier quality vs its GICS peers, consistent even in its worst year">High</button><button class="chip" data-v="Solid" title="Above-average quality vs its peers">Solid</button><button class="chip" data-v="Mixed" title="Middling quality vs its peers">Mixed</button><button class="chip" data-v="Weak" title="Below-average quality vs its peers">Weak</button></div></div>
+      <div class="fgroup"><span class="flabel" title="The absolute gate (M7): is it worth owning at all, regardless of price?">Hoarding floor</span><div class="chips" data-dim="floor">
+        <button class="chip" data-v="Clears" title="Passes the floor: consistently profitable, cash-generative, debt serviceable">Clears</button><button class="chip" data-v="Below" title="Fails the floor: not sound enough to own at all, regardless of price">Below</button></div></div>
+      <div class="fgroup"><span class="flabel" title="Company size by market capitalization">Size</span><div class="chips" data-dim="cap">
+        <button class="chip" data-v="Mega" title="Market cap $200B or more">Mega</button><button class="chip" data-v="Large" title="Market cap $10B–$200B">Large</button><button class="chip" data-v="Mid" title="Market cap $2B–$10B">Mid</button><button class="chip" data-v="Small" title="Market cap under $2B">Small</button></div></div>
     </div>
     <div class="toolrow">
-      <select class="sortsel" id="sortsel" aria-label="Sort by">
-        <option value="fell">Sort · biggest dip</option>
-        <option value="comeback">Sort · deepest recovery</option>
-        <option value="cheap">Sort · cheapest</option>
-        <option value="business">Sort · best business</option>
-        <option value="mcap">Sort · market cap</option>
-      </select>
+      <span class="sorthint">Click a column heading to sort</span>
       <div class="viewtoggle" id="viewtoggle" role="group" aria-label="View">
         <button class="vbtn" data-view="buy">Buy list</button><button class="vbtn" data-view="all">All 1,393</button>
       </div>
@@ -351,11 +346,11 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
       <th>No.</th>
       <th class="co-h" data-sort="ticker">Company</th>
       <th>Sector</th>
-      <th class="num">Market cap</th>
+      <th class="num" data-sort="mcap">Market cap</th>
       <th data-sort="fell">Fell?</th>
       <th data-sort="comeback">Comes back?</th>
       <th data-sort="cheap">Cheap?</th>
-      <th>Good business?</th>
+      <th data-sort="business">Good business?</th>
       <th>Links</th>
     </tr></thead>
     <tbody id="tb"></tbody>
@@ -849,7 +844,13 @@ document.querySelectorAll('.chips').forEach(g=>{
   }));
 });
 document.getElementById('q').addEventListener('input',e=>{ state.q=e.target.value; if(e.target.value) state.view='all'; render(); });
-document.getElementById('sortsel').addEventListener('change',e=>{state.sort=e.target.value; state.dir=1; render();});
+function markSort(){
+  document.querySelectorAll('th[data-sort]').forEach(th=>{
+    const on = th.dataset.sort===state.sort;
+    th.classList.toggle('sorted', on);
+    th.dataset.arrow = on ? (state.dir>0?'▼':'▲') : '';
+  });
+}
 // Buy list / All toggle. "Buy list" also clears filters+search (it's the fixed preset).
 document.querySelectorAll('#viewtoggle .vbtn').forEach(b=>b.addEventListener('click',()=>{
   state.view=b.dataset.view;
@@ -861,9 +862,10 @@ document.querySelectorAll('#viewtoggle .vbtn').forEach(b=>b.addEventListener('cl
   render();
 }));
 document.querySelectorAll('th[data-sort]').forEach(th=>th.addEventListener('click',()=>{
-  const k=th.dataset.sort; if(k==='mcap')return;
-  if(state.sort===k)state.dir*=-1; else{state.sort=k; state.dir=1;} render();}));
+  const k=th.dataset.sort;
+  if(state.sort===k)state.dir*=-1; else{state.sort=k; state.dir=1;} markSort(); render();}));
 
+markSort();
 render();
 
 // ── Column-width adjust tool — TEMPORARY scaffold, gated behind ?cols (or #cols).
