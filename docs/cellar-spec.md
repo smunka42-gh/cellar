@@ -342,12 +342,25 @@ a "below floor" flag.
 **Expanded panel** — opens with a **colour-coded verdict readout**: the
 deterministic call ("A dip worth hoarding" / "Not worth hoarding" / …) led by
 the hoarding gate, then a woven, evidence-highlighted narrative — every clause
-pinned to a computed value. Below it, the chart and a **card per reading**:
-**Worth hoarding?** (M7, the gate, led first with a clears/below accent),
-Fell?, Comes back?, Cheap? (price × earnings side by side), and Good business?
-(M4 relative quality). Each opens the **real workings** — the multi-year
-values, how the number was derived, plain English — and **every headline
-number cites its working**. Nothing shown is un-auditable.
+pinned to a computed value. Below it, the chart and **six cards read top to
+bottom as one sentence** — *this is worth hoarding, a good business, always
+comes back from these depths, currently cheap, did fall hard, and the fall
+is/isn't a mispricing*:
+
+1. **Worth hoarding?** (M7, the gate, led first with a clears/below accent)
+2. **Good business?** (M4 relative quality vs peers)
+3. **Comes back?** (M2 reliable recovery)
+4. **Cheap?** (M3 price × M6 earnings, side by side)
+5. **Fell?** (M1 dip from the recent high)
+6. **Mispriced?** (M5 — was the fall backed by real deterioration)
+
+Below the six, a full-width **Recent coverage** card: a few recent publisher
+headlines (title, date, source, the publisher's own summary, a link to the full
+article) — **context beside the M5 signal, never a Cellar verdict**, pulled from
+yfinance with no model authoring or interpretation (see §4.5). Each card opens
+the **real workings** — the multi-year values, how the number was derived, plain
+English — and **every headline number cites its working**. Nothing shown is
+un-auditable.
 
 ---
 

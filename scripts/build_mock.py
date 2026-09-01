@@ -18,6 +18,14 @@ def main() -> None:
     results = json.loads((DATA / "results_dip.json").read_text())
     template = (ROOT / "site" / "mock.template.html").read_text()
 
+    # Merge cached news (publisher headlines) into each record, if pulled. Kept
+    # separate from the measure pipeline so news can refresh without recomputing.
+    news_file = DATA / "news.json"
+    news = json.loads(news_file.read_text()) if news_file.exists() and news_file.stat().st_size else {}
+    for r in results:
+        r["news"] = news.get(r["ticker"], [])
+    print(f"news attached for {sum(1 for r in results if r['news'])} companies")
+
     # Escape "<" so a company name can never close the <script> block early;
     # "<" is still valid JSON, so JSON.parse reads it back unchanged.
     payload = json.dumps(results).replace("<", "\\u003c")

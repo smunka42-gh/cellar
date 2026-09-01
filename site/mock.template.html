@@ -183,6 +183,18 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
   border-radius:6px; padding:2px 7px; font-family:"IBM Plex Mono",monospace; white-space:nowrap}
 .rl b{color:var(--ink); font-weight:600}
 .floorflag{color:var(--warn); font-weight:600; text-transform:uppercase; font-size:9.5px; letter-spacing:.04em}
+.nnote{font-size:10.5px; color:var(--faint); font-style:italic; margin:2px 0 0}
+.newscard{grid-column:1/-1; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:15px 16px; box-shadow:var(--shadow)}
+.newslist{margin-top:10px}
+.nitem{display:grid; grid-template-columns:120px 1fr auto; gap:20px; align-items:start; border-top:1px dashed var(--line); padding:13px 0}
+.nitem:first-child{border-top:none}
+.nmeta{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--faint); line-height:1.6}
+.ntitle{font-size:13px; font-weight:600; color:var(--ink); text-decoration:none; line-height:1.4}
+.ntitle:hover{color:var(--accent)}
+.nbody .nsum{margin:5px 0 0; font-size:12px; color:var(--muted); line-height:1.5}
+.nread{font-size:11px; color:var(--accent); text-decoration:none; font-weight:600; white-space:nowrap; align-self:center}
+.nread:hover{text-decoration:underline}
+@media(max-width:640px){.nitem{grid-template-columns:1fr; gap:5px} .nread{align-self:start}}
 .minibar{display:flex; gap:2px; align-items:flex-end; height:34px; margin-top:8px}
 .minibar i{flex:1; background:var(--accent-soft); border-radius:1px 1px 0 0; min-height:2px}
 .coming{grid-column:1/-1; border:1px dashed var(--line); border-radius:10px; padding:12px 15px;
@@ -564,14 +576,44 @@ function detail(r){
     bizHtml=`<div class="box"><div class="q">Good business?</div><h4>—</h4><p class="exwhy exna">No quality reading.</p></div>`;
   }
 
-  // Mispricing test (M5) line for the Fell? card — the dip's cause.
-  let fellM5='';
+  // "Mispriced?" card (M5) — was the fall backed by real deterioration? — with
+  // recent publisher coverage beside it (context, never the verdict; no LLM).
+  let mispHead, mispBody;
   if(m5 && m5.available){
-    const nums=[m5.rev_yoy!=null?`rev ${signpct(m5.rev_yoy)}`:null, m5.ni_yoy!=null?`earnings ${signpct(m5.ni_yoy)}`:null].filter(Boolean).join(' · ');
-    const asof=m5.basis==='quarterly'?m5.as_of:`FY${m5.as_of}`;
-    const cl=m5.status==='declining'?'hl-warn':'hl-good';
-    const word=m5.status==='declining'?'declined':'held up';
-    fellM5=`<p class="exwhy"><b>Mispricing test:</b> around the drop, fundamentals <span class="${cl}">${word}</span> — ${nums} YoY (as of ${asof}${m5.basis==='annual'?', annual':''}).</p>`;
+    const fell = r.t.fell !== 'Minimal';
+    const asof = m5.basis==='quarterly' ? m5.as_of : `FY${m5.as_of}`;
+    const basisNote = m5.basis==='annual' ? 'annual' : 'quarterly';
+    let why;
+    if(m5.status==='declining'){
+      mispHead = fell ? 'The fall looks earned' : 'Fundamentals softening';
+      why = fell
+        ? `Around the drop, fundamentals <span class="hl-warn">declined</span> — the fall is at least partly deserved, not a pure mispricing.`
+        : `It hasn't fallen much, but its fundamentals are <span class="hl-warn">declining</span> year-on-year.`;
+    } else {
+      mispHead = fell ? 'Looks mispriced' : 'Fundamentals holding up';
+      why = fell
+        ? `The drop came on <span class="hl-good">no deterioration</span> — fundamentals held up, so it looks like a <span class="hl-good">mispricing</span>.`
+        : `Its fundamentals are <span class="hl-good">holding up</span> year-on-year.`;
+    }
+    mispBody = `<p class="exwhy">${why}</p>
+      <div class="kv"><span class="k">Revenue YoY</span><span class="v">${m5.rev_yoy!=null?signpct(m5.rev_yoy):'—'}</span></div>
+      <div class="kv"><span class="k">Earnings YoY</span><span class="v">${m5.ni_yoy!=null?signpct(m5.ni_yoy):'—'}</span></div>
+      <div class="kv"><span class="k">Basis</span><span class="v">${basisNote} · as of ${asof}</span></div>`;
+  } else if(m5){
+    mispHead = 'No timely read';
+    mispBody = `<p class="exwhy exna">Couldn't line up a clean year-ago comparison — often a fiscal-year change or thin quarterly history.</p>`;
+  } else {
+    mispHead = '—';
+    mispBody = `<p class="exwhy exna">No mispricing reading.</p>`;
+  }
+  const mispHtml=`<div class="box"><div class="q">Mispriced?</div><h4>${mispHead}</h4>${mispBody}</div>`;
+  // Recent coverage — its OWN full-width card below the six, so it isn't read as
+  // part of the mispricing verdict and doesn't distort the card grid. Publisher
+  // headlines only; Cellar never authors or interprets them.
+  let newsCard='';
+  if((r.news||[]).length){
+    const items=r.news.map(a=>`<div class="nitem"><div class="nmeta">${a.d}${a.pub?'<br>'+a.pub:''}</div><div class="nbody"><a class="ntitle" href="${a.u}" target="_blank" rel="noopener">${a.t}</a><p class="nsum">${a.s}</p></div><a class="nread" href="${a.u}" target="_blank" rel="noopener">Read full article →</a></div>`).join('');
+    newsCard=`<div class="newscard"><div class="q">Recent coverage</div><div class="nnote">Headlines that mention the company — context, not a Cellar verdict.</div><div class="newslist">${items}</div></div>`;
   }
 
   const summaryHtml = `<div class="readout ${v.cls}">
@@ -590,20 +632,21 @@ function detail(r){
       </div>
     </div>
     ${hoardHtml}
+    ${bizHtml}
+    <div class="box"><div class="q">Comes back?</div><h4>${rel?'Reliable to '+pct(rel.depth):'No reliable floor'}</h4>${comeHtml}</div>
+    <div class="box"><div class="q">Cheap?</div><h4>${cheapHead}</h4>
+      <div class="subh">On price · vs its own history</div>${cheapHtml}
+      <div class="subh">On earnings · vs its own history</div>${earnHtml}</div>
     <div class="box"><div class="q">Fell?</div><h4>Down ${pct(Math.abs(m1.drawdown))} from its ${m1.high_window_years}-year high</h4>
       <p class="exwhy">Its ${m1.high_window_years}-year high was <b>$${m1.high.toFixed(m1.high<20?2:0)}</b> on ${m1.high_date} — ${m1.days_since_high} days ago, ${fresh}. (The dip is measured from the recent high, not an ancient one.)</p>
-      ${fellM5}
       <div class="kv"><span class="k">Latest close</span><span class="v">$${m1.last.toFixed(m1.last<20?2:0)}</span></div>
       <div class="kv"><span class="k">Below its ${m1.high_window_years}-year high</span><span class="v">${signpct(m1.drawdown)}</span></div>
       <div class="kv"><span class="k">Days since that high</span><span class="v">${m1.days_since_high}</span></div>
       <div class="kv"><span class="k">Market cap</span><span class="v">${fmtCap(r.mcap)}</span></div>
       <div class="kv"><span class="k">History</span><span class="v">${r.history_years} yrs${r.thin_history?' · thin':''}</span></div></div>
-    <div class="box"><div class="q">Comes back?</div><h4>${rel?'Reliable to '+pct(rel.depth):'No reliable floor'}</h4>${comeHtml}</div>
-    <div class="box"><div class="q">Cheap?</div><h4>${cheapHead}</h4>
-      <div class="subh">On price · vs its own history</div>${cheapHtml}
-      <div class="subh">On earnings · vs its own history</div>${earnHtml}</div>
-    ${bizHtml}
-    <div class="coming">All four questions are live: <b>Worth hoarding?</b> (M7, the gate) · <b>Fell?</b> with the mispricing test (M5) · <b>Comes back?</b> (M2) · <b>Cheap?</b> (M3 × M6) · <b>Good business?</b> (M4). Every number links to its full working.</div>
+    ${mispHtml}
+    ${newsCard}
+    <div class="coming">Reads top to bottom as one sentence: <b>Worth hoarding?</b> (M7, the gate) · <b>Good business?</b> (M4) · <b>Comes back?</b> (M2) · <b>Cheap?</b> (M3 × M6) · <b>Fell?</b> (M1) · <b>Mispriced?</b> (M5, with recent coverage). Every number links to its full working.</div>
   </div></div>`;
 }
 
