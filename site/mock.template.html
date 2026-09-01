@@ -49,6 +49,10 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 .brand{font-family:"Fraunces",Georgia,serif; font-weight:700; font-size:38px; letter-spacing:-.02em; color:var(--accent); line-height:1}
 .tag{color:var(--muted); font-size:15px; max-width:56ch}
 .asof{margin-left:auto; color:var(--faint); font-size:12.5px; text-transform:uppercase; letter-spacing:.08em}
+.themebtn{margin-left:12px; background:var(--raised); border:1px solid var(--line); color:var(--muted);
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:11px; padding:4px 11px; border-radius:20px;
+  cursor:pointer; letter-spacing:.02em; white-space:nowrap}
+.themebtn:hover{border-color:var(--accent); color:var(--accent)}
 .lede{margin:14px 0 0; color:var(--muted); font-size:14.5px}
 .lede b{color:var(--ink); font-weight:600}
 
@@ -230,6 +234,57 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
 footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); color:var(--faint); font-size:12px; max-width:80ch}
 .empty{padding:50px; text-align:center; color:var(--muted)}
 </style>
+<script>
+/* Theme: default AUTO = dark after local sunset, light in daytime. Sunset is
+   estimated from the browser's timezone (a small lat/lon table, fallback 40N and
+   the UTC offset) with a standard solar formula — no location prompt, no network,
+   DST-correct via the live offset. A manual toggle (Auto -> Light -> Dark) overrides
+   and is remembered per browser. Applied before <body> paints, so no theme flash. */
+(function(){
+  var KEY='cellar-theme';
+  var TZ={'America/New_York':[40.7,-74],'America/Detroit':[42.3,-83],'America/Toronto':[43.7,-79.4],
+    'America/Chicago':[41.9,-87.6],'America/Winnipeg':[49.9,-97.1],'America/Denver':[39.7,-105],
+    'America/Phoenix':[33.4,-112],'America/Los_Angeles':[34.1,-118.2],'America/Vancouver':[49.3,-123.1],
+    'America/Anchorage':[61.2,-149.9],'Pacific/Honolulu':[21.3,-157.8],'America/Sao_Paulo':[-23.5,-46.6],
+    'America/Mexico_City':[19.4,-99.1],'Europe/London':[51.5,-0.1],'Europe/Dublin':[53.3,-6.2],
+    'Europe/Paris':[48.9,2.3],'Europe/Berlin':[52.5,13.4],'Europe/Madrid':[40.4,-3.7],'Europe/Rome':[41.9,12.5],
+    'Europe/Amsterdam':[52.4,4.9],'Europe/Zurich':[47.4,8.5],'Europe/Moscow':[55.8,37.6],'Asia/Kolkata':[28.6,77.2],
+    'Asia/Dubai':[25.2,55.3],'Asia/Shanghai':[31.2,121.5],'Asia/Hong_Kong':[22.3,114.2],'Asia/Tokyo':[35.7,139.7],
+    'Asia/Seoul':[37.6,127],'Asia/Singapore':[1.35,103.8],'Australia/Sydney':[-33.9,151.2],
+    'Australia/Melbourne':[-37.8,145],'Africa/Johannesburg':[-26.2,28]};
+  function isNight(){
+    var now=new Date(), off=now.getTimezoneOffset();      // minutes; positive = west of UTC
+    var tz=''; try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}
+    var ll=TZ[tz]||[40, -off/4], lat=ll[0], lon=ll[1], rad=Math.PI/180;
+    var doy=Math.floor((now-new Date(now.getFullYear(),0,0))/864e5);
+    var decl=23.45*rad*Math.sin(2*Math.PI*(284+doy)/365);
+    var cosH=(Math.cos(90.833*rad)-Math.sin(lat*rad)*Math.sin(decl))/(Math.cos(lat*rad)*Math.cos(decl));
+    if(cosH>1) return true;                                // polar night
+    if(cosH<-1) return false;                              // midnight sun
+    var H=Math.acos(cosH)/rad/15;                          // half-day length, hours
+    var noon=12 - lon/15 - off/60;                         // solar noon in local clock hours (DST-correct)
+    var hr=now.getHours()+now.getMinutes()/60;
+    return hr < (noon-H) || hr > (noon+H);
+  }
+  function label(p){ return p==='light'?'○ Light':p==='dark'?'● Dark':'◐ Auto'; }
+  function apply(){
+    var p='auto'; try{p=localStorage.getItem(KEY)||'auto';}catch(e){}
+    var theme=(p==='light'||p==='dark')?p:(isNight()?'dark':'light');
+    document.documentElement.setAttribute('data-theme',theme);
+    var b=document.getElementById('themebtn');
+    if(b){ b.textContent=label(p); b.title=p==='auto'?'Theme: Auto — dark after local sunset. Click to override.':'Theme: '+p+' (manual). Click to change.'; }
+  }
+  window.__cycleTheme=function(){
+    var c='auto'; try{c=localStorage.getItem(KEY)||'auto';}catch(e){}
+    var n={auto:'light',light:'dark',dark:'auto'}[c];
+    try{localStorage.setItem(KEY,n);}catch(e){}
+    apply();
+  };
+  apply();                                                 // before paint: no flash
+  document.addEventListener('DOMContentLoaded',apply);     // set the button label once it exists
+  setInterval(function(){ var p='auto'; try{p=localStorage.getItem(KEY)||'auto';}catch(e){} if(p==='auto') apply(); }, 9e5);
+})();
+</script>
 
 <div class="wrap">
   <header>
@@ -237,6 +292,7 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
       <div class="brand">Cellar</div>
       <div class="tag">Buy the dip — but only in companies that reliably climb back.</div>
       <div class="asof">Snapshot · __ASOF__</div>
+      <button id="themebtn" class="themebtn" onclick="__cycleTheme()" title="Theme">◐ Auto</button>
     </div>
     <p class="lede">Every company, every day, answered in plain questions —
       <b>Fell?</b> (and was the fall backed by real deterioration, or a mispricing?),
@@ -281,7 +337,7 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
     <div class="stat"><div class="n"><em id="s-buy">—</em></div><div class="l">in today's buy view</div></div>
     <div class="stat"><div class="n" id="s-shown">—</div><div class="l">shown</div></div>
   </div>
-  <div class="note">Price-engine preset: a meaningful dip, sitting inside the depth it reliably recovers from, and cheap either on price or on earnings (not a value-trap). The real buy gate adds “Good business?”.</div>
+  <div class="note">Buy list = the high-conviction shortlist: it <b>clears the hoarding floor</b>, <b>fell big</b>, <b>reliably recovers</b> from depths this deep, is <b>cheap on both price and earnings</b>, and is a <b>high-quality</b> business. All five must hold.</div>
 
   <table class="tbl">
     <colgroup>
@@ -410,12 +466,13 @@ RAW.forEach(r=>{
   const priceFrac = Math.max(0, Math.min(1, r.m3.mode==='trend' ? -r.m3.vs_usual/0.30 : r.m3.room_10));
   const base = {both:4, growing:3, trap:2, full:1}[cr.cell];
   r.cheapScore = cr.eAvail ? base + cr.ep/100 : 1 + priceFrac;
-  // Buy view: worth hoarding (M7 clears the floor) + fell + reliably recovers +
-  // cheap (price) + high relative quality (M4 High/Solid). M7 is the hard gate.
-  const priceGood = cr.cell==='both' || cr.cell==='growing' || (cr.cell==='priceonly' && m3Tier(r.m3)!=='Full');
+  // Buy view (high-conviction shortlist): worth hoarding (M7 clears the floor) +
+  // fell BIG + reliably recovers (Strong) + cheap on BOTH price and earnings +
+  // top relative quality (M4 High). M7 is the hard gate; every clause must hold.
   r.isbuy = !!(r.m7 && r.m7.available && r.m7.clears) &&
-    (r.t.fell!=='Minimal') && (r.t.comeback==='Strong') && priceGood &&
-    (r.m4 && r.m4.available && (r.m4.tier==='High' || r.m4.tier==='Solid'));
+    (r.t.fell==='Big') && (r.t.comeback==='Strong') &&
+    (cr.cell==='both') &&
+    (r.m4 && r.m4.available && r.m4.tier==='High');
 });
 
 const FILTER_DIMS = ['fell','comeback','cheap','business','floor','cap'];
