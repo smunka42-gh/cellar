@@ -388,7 +388,11 @@ const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),business
 
 function matches(r){
   for(const d of ['fell','comeback','cheap','business','cap']){ const s=state.filters[d]; if(s.size&&!s.has(r.t[d])) return false; }
-  if(state.def && !state.q && !r.isbuy) return false;   // buy-list default, but search finds any stock
+  // The buy preset only holds while NOTHING else is asked. Any filter or search
+  // drops it and queries the whole universe — so "Good business? = High" shows
+  // every High-quality company, not just the buy shortlist.
+  const anyFilter = ['fell','comeback','cheap','business','cap'].some(d => state.filters[d].size);
+  if(state.def && !state.q && !anyFilter && !r.isbuy) return false;
   if(state.q){ const q=state.q.toLowerCase(); if(!(r.ticker.toLowerCase().includes(q)||r.name.toLowerCase().includes(q))) return false; }
   return true;
 }
