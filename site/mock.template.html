@@ -118,6 +118,25 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 .t-warn{background:var(--warn-bg); color:var(--warn)}
 .t-weak{background:var(--weak-bg); color:var(--weak)}
 .t-na{background:transparent; color:var(--muted); border:1px dashed var(--line)}   /* earnings unknown */
+
+/* top-of-panel verdict readout */
+.readout{border:1px solid var(--line); border-left-width:4px; border-radius:10px;
+  padding:13px 16px 14px; margin-bottom:16px}
+.readout.v-good{background:var(--good-bg); border-left-color:var(--good)}
+.readout.v-warn{background:var(--warn-bg); border-left-color:var(--warn)}
+.readout.v-weak{background:var(--weak-bg); border-left-color:var(--weak)}
+.verdict{font-family:"Fraunces",serif; font-weight:600; font-size:16.5px;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.readout.v-good .verdict{color:var(--good)}
+.readout.v-warn .verdict{color:var(--warn)}
+.readout.v-weak .verdict{color:var(--weak)}
+.vtag{font-family:"Libre Franklin",system-ui,sans-serif; font-weight:600; font-size:9.5px;
+  text-transform:uppercase; letter-spacing:.07em; color:var(--faint);
+  background:var(--surface); border:1px solid var(--line); padding:2px 8px; border-radius:20px}
+.vnarr{margin:9px 0 0; font-size:13.5px; line-height:1.6; color:var(--ink)}
+.hl-good{color:var(--good); font-weight:600}
+.hl-warn{color:var(--warn); font-weight:600}
+.hl-num{font-weight:700; font-variant-numeric:tabular-nums}
 .exp{color:var(--faint); font-family:"IBM Plex Mono",monospace; font-size:15px; width:20px; text-align:center}
 tr.row[aria-expanded="true"] .exp{color:var(--accent)}
 
@@ -298,6 +317,22 @@ const m3Tier = m3 => m3.mode==='trend'
   ? (m3.vs_usual<=-0.12?'Cheap': m3.vs_usual<=-0.03?'Fair':'Full')
   : (m3.room_10>=0.5?'Cheap': m3.room_10>=0.2?'Fair':'Full');
 
+// The top-of-panel verdict — a deterministic read of the four answers. Price
+// engine only for now (M4–M7 quality is the real gate and isn't built), so the
+// summary carries a "quality check to come" tag and never claims a finished buy.
+const hl = (t,tone) => `<span class="hl-${tone}">${t}</span>`;
+function verdict(r){
+  const f=r.t.fell, cb=r.t.comeback, cell=r.cr.cell;
+  if(f==='Minimal') return {label:'Not much of a dip', cls:'v-weak'};
+  if(cb==='None')   return {label:"Falls, but doesn't reliably recover", cls:'v-weak'};
+  if(cb==='Past')   return {label:'Past its reliable range', cls:'v-warn'};
+  if(cell==='trap') return {label:'Cheap on price, but earnings fell more', cls:'v-warn'};
+  if(cell==='full') return {label:'In its reliable range, but fully priced', cls:'v-warn'};
+  if(cell==='both' || cell==='growing') return {label:'A dip worth buying', cls:'v-good'};
+  return r.cr.priceCheap ? {label:'A dip worth buying — on price', cls:'v-good'}
+                         : {label:'In its reliable range, not a discount', cls:'v-warn'};
+}
+
 RAW.forEach(r=>{
   r.t=tiers(r);
   const cr=cheapRead(r); r.cr=cr;
@@ -391,7 +426,26 @@ function detail(r){
     : cr.cell==='growing'?'Growing into its price'
     : cr.cell==='trap'?'Cheap on price, dearer on earnings'
     : 'Fully priced';
-  return `<div class="panel"><div class="boxes">
+  // Top-of-panel summary: the verdict + a woven, evidence-highlighted narrative,
+  // every clause pinned to a computed value (template, not model-written).
+  const v=verdict(r);
+  const fellPhrase = m1.days_since_high<=120?'a fresh drop': m1.days_since_high<=365?'a months-long slide':'a slow, multi-year slide';
+  const s=[`Down ${hl(pct(Math.abs(m1.drawdown)),'num')} from its ${m1.high_window_years}-year high — ${fellPhrase}.`];
+  if(rel){
+    const inside = Math.abs(m1.drawdown) <= rel.depth+0.005;
+    s.push(`It ${hl('reliably recovers','good')} from drops as deep as ${hl(pct(rel.depth),'good')}, back to its high in a median of ${hl(mo(rel.median_recovery_days)+' months','num')} — ${hl(rel.occurrences+'×','num')} on record — so today's dip sits ${inside?hl('inside','good'):hl('past','warn')} that range.`);
+  } else {
+    s.push(`But its dips ${hl("don't dependably climb back",'warn')} — not a name to accumulate on weakness.`);
+  }
+  if(cr.cell==='both')          s.push(`And it's ${hl('cheap on both price and earnings','good')} against its own history.`);
+  else if(cr.cell==='growing')  s.push(`It's not cheap on price, yet ${hl('cheaper on earnings than '+cr.ep+'% of its own history','good')} — ${hl('growing into its price','good')}.`);
+  else if(cr.cell==='trap')     s.push(`It looks cheap on price, but earnings fell further — ${hl('a value-trap risk','warn')}, cheaper than only ${hl(cr.ep+'%','warn')} of its earnings history.`);
+  else if(cr.cell==='full')     s.push(`On price and earnings it's ${hl('fully valued','warn')} — no discount today.`);
+  else                          s.push(cr.priceCheap?`It's ${hl('below its usual price','good')}, though its earnings can't be read to confirm.`:`It's ${hl('near the top of its range','warn')}, and its earnings can't be read to confirm.`);
+  const summaryHtml = `<div class="readout ${v.cls}">
+    <div class="verdict">${v.label}<span class="vtag">price engine · quality check to come</span></div>
+    <p class="vnarr">${s.join(' ')}</p></div>`;
+  return `<div class="panel">${summaryHtml}<div class="boxes">
     <div class="chartwrap">
       <div class="charthead">
         <span class="chartname">${r.ticker} · ${r.name}</span>
