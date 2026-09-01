@@ -67,6 +67,10 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 :root[data-theme="dark"] .chip[aria-pressed="true"],
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#17130F}}
 .spacer{flex:1}
+.viewtoggle{display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:var(--surface)}
+.vbtn{border:none; background:transparent; color:var(--muted); font-family:inherit; font-size:12.5px; font-weight:600; padding:5px 15px; cursor:pointer; transition:all .12s}
+.vbtn[aria-pressed="true"]{background:var(--accent); color:#fff}
+.vbtn:not([aria-pressed="true"]):hover{color:var(--ink)}
 .tool-right{display:flex; gap:10px; align-items:flex-end}
 .toolrow{display:flex; gap:10px; align-items:center; margin-top:14px}
 .searchbox{margin-left:0}
@@ -232,6 +236,8 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
         <button class="chip" data-v="Both">Both</button><button class="chip" data-v="Growing in">Growing in</button><button class="chip" data-v="Trap risk">Trap risk</button><button class="chip" data-v="Full">Full</button></div></div>
       <div class="fgroup"><span class="flabel">Good business?</span><div class="chips" data-dim="business">
         <button class="chip" data-v="High">High</button><button class="chip" data-v="Solid">Solid</button><button class="chip" data-v="Mixed">Mixed</button><button class="chip" data-v="Weak">Weak</button></div></div>
+      <div class="fgroup"><span class="flabel">Hoarding floor</span><div class="chips" data-dim="floor">
+        <button class="chip" data-v="Clears">Clears</button><button class="chip" data-v="Below">Below</button></div></div>
       <div class="fgroup"><span class="flabel">Size</span><div class="chips" data-dim="cap">
         <button class="chip" data-v="Mega">Mega</button><button class="chip" data-v="Large">Large</button><button class="chip" data-v="Mid">Mid</button><button class="chip" data-v="Small">Small</button></div></div>
     </div>
@@ -243,7 +249,9 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
         <option value="business">Sort · best business</option>
         <option value="mcap">Sort · market cap</option>
       </select>
-      <button class="chip" id="reset">Default View</button>
+      <div class="viewtoggle" id="viewtoggle" role="group" aria-label="View">
+        <button class="vbtn" data-view="buy">Buy list</button><button class="vbtn" data-view="all">All 1,393</button>
+      </div>
       <div class="spacer"></div>
       <input class="search searchbox" id="q" placeholder="ticker / name" aria-label="search">
     </div>
@@ -376,6 +384,7 @@ RAW.forEach(r=>{
   const cr=cheapRead(r); r.cr=cr;
   r.t.cheap = cr.cell==='priceonly' ? 'priceonly' : CHEAP_PILL[cr.cell].label;
   r.t.business = (r.m4 && r.m4.available) ? r.m4.tier : 'Limited';   // Good business? tier
+  r.t.floor = (r.m7 && r.m7.available) ? (r.m7.clears ? 'Clears' : 'Below') : 'Unknown';  // hoarding floor
   // Combined cheapness for the "cheapest" sort — higher = better buy. Rank by
   // cell (both > growing > trap > full), then by earnings-yield percentile;
   // price-only names, whose earnings we can't read, land in [1,2] on price alone.
@@ -390,15 +399,14 @@ RAW.forEach(r=>{
     (r.m4 && r.m4.available && (r.m4.tier==='High' || r.m4.tier==='Solid'));
 });
 
-const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),cap:new Set()},q:'',def:true,sort:'fell',dir:1,open:null};
+const FILTER_DIMS = ['fell','comeback','cheap','business','floor','cap'];
+const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),floor:new Set(),cap:new Set()},q:'',view:'buy',sort:'fell',dir:1,open:null};
 
 function matches(r){
-  for(const d of ['fell','comeback','cheap','business','cap']){ const s=state.filters[d]; if(s.size&&!s.has(r.t[d])) return false; }
-  // The buy preset only holds while NOTHING else is asked. Any filter or search
-  // drops it and queries the whole universe — so "Good business? = High" shows
-  // every High-quality company, not just the buy shortlist.
-  const anyFilter = ['fell','comeback','cheap','business','cap'].some(d => state.filters[d].size);
-  if(state.def && !state.q && !anyFilter && !r.isbuy) return false;
+  // Buy list = the curated shortlist, full stop. "All" = the whole universe with
+  // the filter chips and search active. (Touching a filter or search flips to All.)
+  if(state.view==='buy') return r.isbuy;
+  for(const d of FILTER_DIMS){ const s=state.filters[d]; if(s.size&&!s.has(r.t[d])) return false; }
   if(state.q){ const q=state.q.toLowerCase(); if(!(r.ticker.toLowerCase().includes(q)||r.name.toLowerCase().includes(q))) return false; }
   return true;
 }
@@ -649,9 +657,9 @@ function render(){
   document.getElementById('s-total').textContent=RAW.length.toLocaleString();
   document.getElementById('s-buy').textContent=RAW.filter(r=>r.isbuy).length.toLocaleString();
   document.getElementById('s-shown').textContent=rows.length.toLocaleString();
-  // Default View chip lights up (like the filters) only when NO filter/search is applied
-  const f=state.filters, atDefault=!state.q && !f.fell.size && !f.comeback.size && !f.cheap.size && !f.business.size && !f.cap.size;
-  document.getElementById('reset').setAttribute('aria-pressed', String(atDefault));
+  // reflect the current view on the Buy list / All toggle
+  document.querySelectorAll('#viewtoggle .vbtn').forEach(b =>
+    b.setAttribute('aria-pressed', String(b.dataset.view===state.view)));
   document.getElementById('empty').hidden=rows.length>0;
   const frag=document.createDocumentFragment();
   rows.forEach((r,idx)=>{
@@ -693,21 +701,27 @@ function render(){
   if(state.open){ const openR=rows.find(x=>x.ticker===state.open); const wrap=tb.querySelector('tr.detail .chartwrap'); if(openR&&wrap) mountChart(wrap,openR); }
 }
 
-// filter chips
+// filter chips — touching any filter flips to the "All" view (you're exploring the universe now)
 document.querySelectorAll('.chips').forEach(g=>{
-  const dim=g.dataset.dim; if(!dim) return;   // skip the Show toggle (handled separately)
+  const dim=g.dataset.dim; if(!dim) return;
   g.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
     const v=c.dataset.v, s=state.filters[dim], on=s.has(v);
-    on?s.delete(v):s.add(v); c.setAttribute('aria-pressed',(!on).toString()); render();
+    on?s.delete(v):s.add(v); c.setAttribute('aria-pressed',(!on).toString());
+    state.view='all'; render();
   }));
 });
-document.getElementById('q').addEventListener('input',e=>{state.q=e.target.value; render();});
+document.getElementById('q').addEventListener('input',e=>{ state.q=e.target.value; if(e.target.value) state.view='all'; render(); });
 document.getElementById('sortsel').addEventListener('change',e=>{state.sort=e.target.value; state.dir=1; render();});
-// Default View button: clears all filters/search/open row -> the default buy list
-document.getElementById('reset').addEventListener('click',()=>{
-  state.filters={fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),cap:new Set()}; state.q=''; state.def=true; state.open=null;
-  document.querySelectorAll('.chips[data-dim] .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
-  document.getElementById('q').value=''; render();});
+// Buy list / All toggle. "Buy list" also clears filters+search (it's the fixed preset).
+document.querySelectorAll('#viewtoggle .vbtn').forEach(b=>b.addEventListener('click',()=>{
+  state.view=b.dataset.view;
+  if(state.view==='buy'){
+    state.filters={fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),floor:new Set(),cap:new Set()};
+    state.q=''; document.getElementById('q').value='';
+    document.querySelectorAll('.chips[data-dim] .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
+  }
+  render();
+}));
 document.querySelectorAll('th[data-sort]').forEach(th=>th.addEventListener('click',()=>{
   const k=th.dataset.sort; if(k==='mcap')return;
   if(state.sort===k)state.dir*=-1; else{state.sort=k; state.dir=1;} render();}));
