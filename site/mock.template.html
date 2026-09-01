@@ -1,0 +1,475 @@
+<title>Cellar</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+:root{
+  --paper:#FBF8F4; --surface:#FFFFFF; --raised:#F5EFE8;
+  --ink:#241F1B; --muted:#7C726A; --faint:#A79C92; --line:#E9E1D8;
+  --accent:#8C2F39; --accent-soft:#F3E4E4;
+  --good:#3F7A52; --good-bg:#E7F0E8;
+  --warn:#B07A2B; --warn-bg:#F6ECD9;
+  --weak:#8B817A; --weak-bg:#EFEAE4;
+  --shadow:0 1px 2px rgba(40,30,20,.05),0 6px 20px rgba(40,30,20,.06);
+}
+:root:not([data-theme="light"]){ }
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#17130F; --surface:#211C17; --raised:#2A241E;
+    --ink:#EDE6DD; --muted:#A79C92; --faint:#7A7069; --line:#332B24;
+    --accent:#E29AA2; --accent-soft:#3A2224;
+    --good:#84BE93; --good-bg:#22331F; --warn:#DBAF63; --warn-bg:#352B18;
+    --weak:#9A8F87; --weak-bg:#2A241E;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17130F; --surface:#211C17; --raised:#2A241E;
+  --ink:#EDE6DD; --muted:#A79C92; --faint:#7A7069; --line:#332B24;
+  --accent:#E29AA2; --accent-soft:#3A2224;
+  --good:#84BE93; --good-bg:#22331F; --warn:#DBAF63; --warn-bg:#352B18;
+  --weak:#9A8F87; --weak-bg:#2A241E;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Libre Franklin",system-ui,sans-serif; font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px; margin:0 auto; padding:0 22px 80px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+/* header */
+header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
+.brandrow{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap}
+.brand{font-family:"Fraunces",Georgia,serif; font-weight:700; font-size:38px; letter-spacing:-.02em; color:var(--accent); line-height:1}
+.tag{color:var(--muted); font-size:15px; max-width:56ch}
+.asof{margin-left:auto; color:var(--faint); font-size:12.5px; text-transform:uppercase; letter-spacing:.08em}
+.lede{margin:14px 0 0; color:var(--muted); max-width:74ch; font-size:14.5px}
+.lede b{color:var(--ink); font-weight:600}
+
+/* toolbar */
+.toolbar{position:sticky; top:0; z-index:5; background:var(--paper);
+  padding:16px 0 14px; border-bottom:1px solid var(--line); margin-bottom:2px}
+.filters{display:flex; gap:22px; flex-wrap:wrap; align-items:flex-end}
+.fgroup{display:flex; flex-direction:column; gap:7px}
+.flabel{font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--faint); font-weight:600}
+.chips{display:flex; gap:6px}
+.chip{border:1px solid var(--line); background:var(--surface); color:var(--muted);
+  padding:5px 11px; border-radius:999px; font-size:12.5px; cursor:pointer; font-weight:500;
+  font-family:inherit; transition:all .12s}
+.chip:hover{border-color:var(--accent); color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+:root[data-theme="dark"] .chip[aria-pressed="true"],
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#17130F}}
+.spacer{flex:1}
+.tool-right{display:flex; gap:10px; align-items:flex-end}
+.toolrow{display:flex; gap:10px; align-items:center; margin-top:14px}
+.searchbox{margin-left:0}
+.search{border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  padding:5px 14px; border-radius:999px; font-family:inherit; font-size:12.5px; font-weight:500;
+  width:150px; transition:all .12s}
+.search:hover{border-color:var(--accent)}
+.search::placeholder{color:var(--faint)}
+.sortsel{border:1px solid var(--line); background:var(--surface); color:var(--muted);
+  padding:5px 12px; border-radius:999px; font-family:inherit; font-size:12.5px; font-weight:500;
+  cursor:pointer; transition:all .12s}
+.sortsel:hover{border-color:var(--accent); color:var(--ink)}
+.btn{border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  padding:7px 13px; border-radius:8px; font-size:12.5px; cursor:pointer; font-family:inherit; font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+
+/* summary */
+.summary{display:flex; gap:26px; padding:16px 0 6px; flex-wrap:wrap; align-items:baseline}
+.stat .n{font-family:"IBM Plex Mono",monospace; font-size:24px; font-weight:500; color:var(--ink)}
+.stat .n em{color:var(--accent); font-style:normal}
+.stat .l{font-size:12px; color:var(--muted); margin-top:1px}
+.note{color:var(--faint); font-size:12.5px; margin-left:auto; max-width:40ch; text-align:right}
+
+/* table */
+.tbl{width:100%; border-collapse:collapse; margin-top:8px}
+.tbl thead th{position:sticky; top:64px; background:var(--paper); z-index:3;
+  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--faint); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap}
+.tbl thead th.num{text-align:right}
+.tbl thead th:hover{color:var(--ink)}
+.tbl tbody tr.row{border-bottom:1px solid var(--line); cursor:pointer}
+.tbl tbody tr.row:hover{background:var(--raised)}
+.tbl td{padding:11px 12px; vertical-align:middle}
+.co .tk{font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:14px}
+.co .nm{color:var(--muted); font-size:12.5px; margin-top:1px; max-width:26ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.sec{color:var(--faint); font-size:12px}
+.cell-fig{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink)}
+.cell-sub{color:var(--faint); font-size:11.5px; font-family:"IBM Plex Mono",monospace}
+.num{text-align:right}
+
+/* tier pills */
+.pill{display:inline-block; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:600;
+  letter-spacing:.01em; white-space:nowrap}
+.t-good{background:var(--good-bg); color:var(--good)}
+.t-warn{background:var(--warn-bg); color:var(--warn)}
+.t-weak{background:var(--weak-bg); color:var(--weak)}
+.exp{color:var(--faint); font-family:"IBM Plex Mono",monospace; font-size:15px; width:20px; text-align:center}
+tr.row[aria-expanded="true"] .exp{color:var(--accent)}
+
+/* detail */
+tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--line)}
+.panel{padding:6px 14px 20px}
+.boxes{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin-top:6px}
+.box{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:15px 16px; box-shadow:var(--shadow)}
+.box h4{margin:0 0 3px; font-family:"Fraunces",serif; font-weight:600; font-size:15px}
+.box .q{color:var(--faint); font-size:11px; text-transform:uppercase; letter-spacing:.07em; margin-bottom:10px}
+.box p{margin:9px 0 0; font-size:13px; color:var(--ink)}
+.box .exwhy{color:var(--muted); font-size:12.5px; line-height:1.5}
+.kv{display:flex; justify-content:space-between; gap:12px; font-size:12.5px; padding:3px 0; border-top:1px dashed var(--line)}
+.kv:first-of-type{border-top:none}
+.kv .k{color:var(--muted)} .kv .v{font-family:"IBM Plex Mono",monospace; color:var(--ink)}
+.cite{color:var(--accent); font-size:11px; text-decoration:none; border-bottom:1px dotted var(--accent)}
+.minibar{display:flex; gap:2px; align-items:flex-end; height:34px; margin-top:8px}
+.minibar i{flex:1; background:var(--accent-soft); border-radius:1px 1px 0 0; min-height:2px}
+.coming{grid-column:1/-1; border:1px dashed var(--line); border-radius:10px; padding:12px 15px;
+  color:var(--muted); font-size:12.5px; background:transparent}
+.coming b{color:var(--ink)}
+.links{white-space:nowrap}
+.links a{display:inline-block; width:25px; height:22px; line-height:21px; text-align:center;
+  border:1px solid var(--line); border-radius:6px; color:var(--muted); text-decoration:none;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; margin-right:4px}
+.links a:hover{border-color:var(--accent); color:var(--accent)}
+.chartwrap{grid-column:1/-1; background:var(--surface); border:1px solid var(--line);
+  border-radius:10px; padding:12px 14px 10px; box-shadow:var(--shadow); margin-bottom:2px}
+.charthead{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; gap:12px}
+.chartname{font-family:"Fraunces",serif; font-weight:600; font-size:14px; color:var(--ink)}
+.tl{display:flex; gap:4px}
+.tlb{border:1px solid transparent; background:transparent; color:var(--muted); font-family:"IBM Plex Mono",monospace;
+  font-size:11px; padding:3px 8px; border-radius:6px; cursor:pointer}
+.tlb:hover{color:var(--ink)}
+.tlb[aria-pressed="true"]{background:var(--accent-soft); color:var(--accent); border:1px solid var(--accent)}
+.chart{width:100%; height:176px; display:block}
+.chartfoot{display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:10px; flex-wrap:wrap}
+.chartcap{font-size:11.5px; color:var(--muted)}
+.chartcap b{color:var(--ink); font-family:"IBM Plex Mono",monospace; font-weight:500}
+.chartcap .floor{color:var(--good)}
+.indb{border:1px solid var(--line); background:var(--surface); color:var(--muted); font-family:inherit;
+  font-size:11px; padding:3px 9px; border-radius:6px; cursor:pointer; white-space:nowrap}
+.indb[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
+.indb:hover{border-color:var(--accent)}
+footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); color:var(--faint); font-size:12px; max-width:80ch}
+.empty{padding:50px; text-align:center; color:var(--muted)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brandrow">
+      <div class="brand">Cellar</div>
+      <div class="tag">Buy the dip — but only in companies that reliably climb back.</div>
+      <div class="asof">Snapshot · __ASOF__</div>
+    </div>
+    <p class="lede">Every company, every day, answered in plain questions.
+      This mock covers the <b>price engine</b> — <b>Fell?</b>, <b>Comes back?</b>, <b>Cheap?</b> —
+      computed on full price history for all 1,394 names. <b>Good business?</b> (quality, fundamentals,
+      the buy-gate) arrives with M4–M7. Click any row for the real workings.</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="filters">
+      <div class="fgroup"><span class="flabel">Fell?</span><div class="chips" data-dim="fell">
+        <button class="chip" data-v="Big">Big</button><button class="chip" data-v="Some">Some</button><button class="chip" data-v="Minimal">Minimal</button></div></div>
+      <div class="fgroup"><span class="flabel">Comes back?</span><div class="chips" data-dim="comeback">
+        <button class="chip" data-v="Strong">Strong</button><button class="chip" data-v="Past">Past floor</button><button class="chip" data-v="None">None</button></div></div>
+      <div class="fgroup"><span class="flabel">Cheap?</span><div class="chips" data-dim="cheap">
+        <button class="chip" data-v="Cheap">Cheap</button><button class="chip" data-v="Fair">Fair</button><button class="chip" data-v="Full">Full price</button></div></div>
+      <div class="fgroup"><span class="flabel">Size</span><div class="chips" data-dim="cap">
+        <button class="chip" data-v="Mega">Mega</button><button class="chip" data-v="Large">Large</button><button class="chip" data-v="Mid">Mid</button><button class="chip" data-v="Small">Small</button></div></div>
+    </div>
+    <div class="toolrow">
+      <select class="sortsel" id="sortsel" aria-label="Sort by">
+        <option value="fell">Sort · biggest dip</option>
+        <option value="comeback">Sort · deepest recovery</option>
+        <option value="cheap">Sort · cheapest</option>
+        <option value="mcap">Sort · market cap</option>
+      </select>
+      <button class="chip" id="reset">Default View</button>
+      <div class="spacer"></div>
+      <input class="search searchbox" id="q" placeholder="ticker / name" aria-label="search">
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="stat"><div class="n" id="s-total">—</div><div class="l">SEC-filing companies</div></div>
+    <div class="stat"><div class="n"><em id="s-buy">—</em></div><div class="l">in today's buy view</div></div>
+    <div class="stat"><div class="n" id="s-shown">—</div><div class="l">shown</div></div>
+    <div class="note">Price-only preset: a meaningful dip, sitting inside the depth it reliably recovers from, at a fair-or-better price. The real buy gate adds “Good business?”.</div>
+  </div>
+
+  <table class="tbl">
+    <thead><tr>
+      <th data-sort="ticker">Company</th>
+      <th>Sector</th>
+      <th class="num">Market cap</th>
+      <th data-sort="fell">Fell?</th>
+      <th data-sort="comeback">Comes back?</th>
+      <th data-sort="cheap">Cheap?</th>
+      <th>Good business?</th>
+      <th>Links</th>
+      <th></th>
+    </tr></thead>
+    <tbody id="tb"></tbody>
+  </table>
+  <div class="empty" id="empty" hidden>No companies match these filters.</div>
+
+  <footer>
+    General information, identical for every reader — not tailored advice. Figures computed from full
+    price history (adjusted closes). “Reliably recovers” = a depth the stock has always climbed back
+    from, fast enough that the recovery annualizes ≥ ~10%/yr. “Usual price” = its own long-term growth
+    trend. Prices via yfinance; universe from S&amp;P Dow Jones Indices listings; GICS is S&amp;P/MSCI.
+  </footer>
+</div>
+
+<script id="cellar-data" type="application/json">__DATA__</script>
+<script>
+const RAW = JSON.parse(document.getElementById('cellar-data').textContent);
+const pct = x => (x*100).toFixed(0)+'%';
+const signpct = x => (x>=0?'+':'')+(x*100).toFixed(0)+'%';
+const mo = d => (d/30.44).toFixed(0);
+const fmtCap = m => m==null ? '—'
+  : m>=1e12 ? '$'+(m/1e12).toFixed(1)+'T'
+  : m>=1e10 ? '$'+(m/1e9).toFixed(0)+'B'
+  : m>=1e9  ? '$'+(m/1e9).toFixed(1)+'B'
+  : '$'+(m/1e6).toFixed(0)+'M';
+const capTier = m => m==null ? '?' : m>=200e9 ? 'Mega' : m>=10e9 ? 'Large' : m>=2e9 ? 'Mid' : 'Small';
+
+function tiers(r){
+  const dd=Math.abs(r.m1.drawdown), rel=r.m2.reliable, m3=r.m3;
+  const fell = dd>=0.20?'Big': dd>=0.08?'Some':'Minimal';
+  let comeback='None';
+  if(rel){ comeback = dd <= rel.depth+0.005 ? 'Strong' : 'Past'; }
+  let cheap;
+  if(m3.mode==='trend'){ cheap = m3.vs_usual<=-0.12?'Cheap': m3.vs_usual<=-0.03?'Fair':'Full'; }
+  else { cheap = m3.room_10>=0.5?'Cheap': m3.room_10>=0.2?'Fair':'Full'; }
+  return {fell,comeback,cheap,cap:capTier(r.mcap)};
+}
+const cls = {Big:'t-warn',Some:'t-warn',Minimal:'t-weak',
+  Strong:'t-good',Past:'t-warn',None:'t-weak',
+  Cheap:'t-good',Fair:'t-warn',Full:'t-weak'};
+RAW.forEach(r=>{ r.t=tiers(r);
+  r.cheapScore = r.m3.mode==='trend' ? -r.m3.vs_usual : r.m3.room_10;  // higher = cheaper, across modes
+  r.isbuy=(r.t.fell!=='Minimal')&&(r.t.comeback==='Strong')&&(r.t.cheap!=='Full'); });
+
+const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),cap:new Set()},q:'',def:true,sort:'fell',dir:1,open:null};
+
+function matches(r){
+  for(const d of ['fell','comeback','cheap','cap']){ const s=state.filters[d]; if(s.size&&!s.has(r.t[d])) return false; }
+  if(state.def && !state.q && !r.isbuy) return false;   // buy-list default, but search finds any stock
+  if(state.q){ const q=state.q.toLowerCase(); if(!(r.ticker.toLowerCase().includes(q)||r.name.toLowerCase().includes(q))) return false; }
+  return true;
+}
+const fellRank={Big:3,Some:2,Minimal:1}, cbRank={Strong:3,Past:2,None:1}, chRank={Cheap:3,Fair:2,Full:1};
+function sortKey(r){
+  switch(state.sort){
+    case 'ticker': return r.ticker;
+    case 'fell': return -Math.abs(r.m1.drawdown);
+    case 'comeback': return -(r.m2.reliable?r.m2.reliable.depth:0);
+    case 'cheap': return -r.cheapScore;
+    case 'mcap': return -(r.mcap||0);
+    default: return r.ticker;
+  }
+}
+function fmtMcap(){return '';}
+
+function detail(r){
+  const m1=r.m1,m2=r.m2,m3=r.m3, rel=m2.reliable, td=m2.today;
+  const fresh = m1.days_since_high<=120?'a fresh drop': m1.days_since_high<=365?'a months-long slide':'a slow, multi-year slide';
+  const floorPx = rel ? m1.high*(1-rel.depth) : null;
+  let comeHtml;
+  if(rel){
+    comeHtml=`<p class="exwhy">It reliably climbs back from dips as deep as <b>${pct(rel.depth)}</b> — always eventually,
+      and fast enough to annualize <b>${pct(rel.annualized)}/yr</b>. Today's ${pct(Math.abs(m1.drawdown))} dip is
+      ${Math.abs(m1.drawdown)<=rel.depth?'<b>inside</b> that reliable range':'<b>past</b> that reliable range — rarer, slower territory'}${td&&td.occurrences?`; it has fallen this far or deeper <b>${td.occurrences}×</b> before, back to its high in a median of <b>${td.median_recovery_days?mo(td.median_recovery_days):'—'} months</b>`:''}.</p>
+      <div class="kv"><span class="k">Reliable depth <a class="cite" title="deepest depth passing the test">?</a></span><span class="v">${pct(rel.depth)}</span></div>
+      <div class="kv"><span class="k">Recovery frequency</span><span class="v">${rel.occurrences}×</span></div>
+      <div class="kv"><span class="k">Recovery time (median)</span><span class="v">${mo(rel.median_recovery_days)} mo</span></div>
+      <div class="kv"><span class="k">Drawdown episodes (${Math.round(r.history_years)}y)</span><span class="v">${m2.n_episodes}</span></div>`;
+  } else {
+    comeHtml=`<p class="exwhy">No depth clears the reliability test — its dips don't dependably climb back within a
+      meaningful time. Not a name to accumulate on weakness.</p>
+      <div class="kv"><span class="k">Drawdown episodes (${Math.round(r.history_years)}y)</span><span class="v">${m2.n_episodes}</span></div>`;
+  }
+  let cheapHtml;
+  if(m3.mode==='trend'){
+    cheapHtml=`<p class="exwhy">Its <b>usual price</b> — where its own growth trend sits today — is <b>$${m3.usual_price.toFixed(m3.usual_price<20?2:0)}</b>.
+      At $${m3.today.toFixed(m3.today<20?2:0)} it's <b>${signpct(m3.vs_usual)}</b> vs usual
+      (${m3.z<=-1.5?'unusually cheap':m3.z<=-0.5?'a little below':'about at'} its normal, ${m3.z.toFixed(1)}σ).</p>
+      <div class="kv"><span class="k">Usual price (trend)</span><span class="v">$${m3.usual_price.toFixed(m3.usual_price<20?2:0)}</span></div>
+      <div class="kv"><span class="k">Today vs usual</span><span class="v">${signpct(m3.vs_usual)} · ${m3.z.toFixed(1)}σ</span></div>
+      <div class="kv"><span class="k">Trend fit (R²)</span><span class="v">${m3.r2.toFixed(2)}</span></div>
+      <div class="kv"><span class="k">Room: yrs traded ≥+10% / +20%</span><span class="v">${pct(m3.room_10)} / ${pct(m3.room_20)}</span></div>`;
+  } else {
+    cheapHtml=`<p class="exwhy">Its price zig-zags too much for a clean trend, so we read the <b>range</b>: in the
+      last 3 years it traded above <b>$${(m3.today*1.10).toFixed(m3.today<20?2:0)}</b> (+10%) and
+      <b>$${(m3.today*1.20).toFixed(m3.today<20?2:0)}</b> (+20%) <b>${pct(m3.room_10)}</b> and
+      <b>${pct(m3.room_20)}</b> of the time — ${m3.room_10>=0.5?'plenty of room to recover into':m3.room_10>=0.2?'some room above':'near the top of its 3-year range'}.</p>
+      <div class="kv"><span class="k">Trend fit (R²)</span><span class="v">${m3.r2.toFixed(2)} (low)</span></div>`;
+  }
+  return `<div class="panel"><div class="boxes">
+    <div class="chartwrap">
+      <div class="charthead">
+        <span class="chartname">${r.ticker} · ${r.name}</span>
+        <div class="tl">${['1Y','3Y','5Y','MAX'].map(w=>`<button class="tlb" data-w="${w}">${w}</button>`).join('')}</div>
+      </div>
+      <canvas class="chart"></canvas>
+      <div class="chartfoot">
+        <span class="chartcap">${m1.high_window_years}-yr high <b>$${m1.high.toFixed(m1.high<20?2:0)}</b> · today <b>$${m1.last.toFixed(m1.last<20?2:0)}</b> (${signpct(m1.drawdown)})${floorPx!=null?` · <span class="floor">reliably recovers from ${Math.round(rel.depth*100)}% down (~$${floorPx.toFixed(floorPx<20?2:0)})</span>`:''}</span>
+        <button class="indb">+ Indicators</button>
+      </div>
+    </div>
+    <div class="box"><div class="q">Fell?</div><h4>Down ${pct(Math.abs(m1.drawdown))} from its ${m1.high_window_years}-year high</h4>
+      <p class="exwhy">Its ${m1.high_window_years}-year high was <b>$${m1.high.toFixed(m1.high<20?2:0)}</b> on ${m1.high_date} — ${m1.days_since_high} days ago, ${fresh}. (The dip is measured from the recent high, not an ancient one.)</p>
+      <div class="kv"><span class="k">Latest close</span><span class="v">$${m1.last.toFixed(m1.last<20?2:0)}</span></div>
+      <div class="kv"><span class="k">Below its ${m1.high_window_years}-year high</span><span class="v">${signpct(m1.drawdown)}</span></div>
+      <div class="kv"><span class="k">Days since that high</span><span class="v">${m1.days_since_high}</span></div>
+      <div class="kv"><span class="k">Market cap</span><span class="v">${fmtCap(r.mcap)}</span></div>
+      <div class="kv"><span class="k">History</span><span class="v">${r.history_years} yrs${r.thin_history?' · thin':''}</span></div></div>
+    <div class="box"><div class="q">Comes back?</div><h4>${rel?'Reliable to '+pct(rel.depth):'No reliable floor'}</h4>${comeHtml}</div>
+    <div class="box"><div class="q">Cheap?</div><h4>${m3.mode==='trend'?signpct(m3.vs_usual)+' vs its usual price':pct(m3.room_10)+' room above'}</h4>${cheapHtml}</div>
+    <div class="coming">Good business? — <b>quality, fundamentals-intact, and the solvency floor (M4–M7)</b> attach here next,
+      and become the actual buy gate. Every number above will link to its full working.</div>
+  </div></div>`;
+}
+
+let chartState={win:'MAX', ind:false};    // one chart open at a time
+
+function drawChart(cv, r, st){
+  const c=r.chart[st.win]; if(!c||!c.closes||c.closes.length<2) return;
+  const vals=c.closes, n=vals.length, dpr=window.devicePixelRatio||1;
+  const W=cv.clientWidth||600, H=176;
+  cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+  const ctx=cv.getContext('2d'); ctx.scale(dpr,dpr); ctx.clearRect(0,0,W,H);
+  const cs=getComputedStyle(document.body), V=k=>cs.getPropertyValue(k).trim();
+  const accent=V('--accent'),muted=V('--muted'),good=V('--good'),faint=V('--faint'),warn=V('--warn');
+  const today=r.m1.last, threeHi=r.m1.high, rel=r.m2.reliable, L=r.levels||{};
+  const floor= rel? threeHi*(1-rel.depth): null;
+  let ys=[...vals, today, threeHi]; if(floor!=null) ys.push(floor);
+  [L.w52_high,L.w52_low].forEach(x=>{ if(x!=null) ys.push(x); });
+  if(st.ind){ [L.sma50,L.sma200].forEach(x=>{ if(x!=null) ys.push(x); }); }
+  const lo=Math.min(...ys), hi=Math.max(...ys);
+  const padL=48,padR=46,padT=14,padB=18;
+  const X=i=> padL + (i/(n-1))*(W-padL-padR);
+  const Y=v=> padT + (1-(v-lo)/((hi-lo)||1))*(H-padT-padB);
+  // price area + line
+  ctx.beginPath(); ctx.moveTo(X(0),Y(vals[0])); for(let i=1;i<n;i++) ctx.lineTo(X(i),Y(vals[i]));
+  ctx.lineTo(X(n-1),H-padB); ctx.lineTo(X(0),H-padB); ctx.closePath();
+  ctx.globalAlpha=0.12; ctx.fillStyle=accent; ctx.fill(); ctx.globalAlpha=1;
+  ctx.beginPath(); ctx.moveTo(X(0),Y(vals[0])); for(let i=1;i<n;i++) ctx.lineTo(X(i),Y(vals[i]));
+  ctx.strokeStyle=accent; ctx.lineWidth=1.6; ctx.stroke();
+  // labelled horizontal level
+  function lvl(v,color,dash,label){
+    if(v==null||v<lo||v>hi) return; const y=Y(v);
+    ctx.setLineDash(dash); ctx.strokeStyle=color; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=color; ctx.font='9px "IBM Plex Mono",monospace'; ctx.textAlign='left';
+    ctx.fillText(label, W-padR+3, y+3);
+  }
+  // reliable-depth threshold and the moving averages are always LINES
+  if(floor!=null) lvl(floor, good, [4,3], rel?`${Math.round(rel.depth*100)}%↓`:'floor');
+  if(st.ind){
+    lvl(L.sma50, '#5b8fb0', [5,3], '50d');
+    lvl(L.sma200, '#9a6fb0', [5,3], '200d');
+  }
+  // Key levels as lines across the chart. The 52w window is a subset of the 3y
+  // window, so the 52w high can only ever EQUAL the 3y high (never exceed it);
+  // when they coincide we draw ONE line labelled for both.
+  const sameHigh = L.w52_high!=null && Math.abs(L.w52_high-threeHi) <= Math.max(0.01, threeHi*0.005);
+  lvl(threeHi, muted, [], sameHigh?`${r.m1.high_window_years}y·52w hi`:`${r.m1.high_window_years}y hi`);
+  if(!sameHigh) lvl(L.w52_high, warn, [3,3], '52w hi');
+  lvl(L.w52_low, warn, [3,3], '52w lo');
+  ctx.fillStyle=accent; ctx.beginPath(); ctx.arc(X(n-1),Y(vals[n-1]),3,0,7); ctx.fill();
+  const dec=hi<20?1:0;
+  ctx.fillStyle=faint; ctx.font='10px "IBM Plex Mono",monospace'; ctx.textAlign='right';
+  ctx.fillText('$'+hi.toFixed(dec),padL-6,Y(hi)+8); ctx.fillText('$'+lo.toFixed(dec),padL-6,Y(lo));
+  ctx.textAlign='left'; ctx.fillText(c.from.slice(0,4),padL,H-5);
+  ctx.textAlign='right'; ctx.fillText(c.to.slice(0,7),W-padR,H-5);
+}
+
+function mountChart(wrap, r){
+  const cv=wrap.querySelector('canvas.chart');
+  const tlbs=[...wrap.querySelectorAll('.tlb')], indb=wrap.querySelector('.indb');
+  const redraw=()=>{
+    drawChart(cv, r, chartState);
+    tlbs.forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.w===chartState.win)));
+    indb.setAttribute('aria-pressed', String(chartState.ind));
+    indb.textContent = (chartState.ind?'– ':'+ ')+'Indicators';
+  };
+  tlbs.forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); chartState.win=b.dataset.w; redraw(); }));
+  indb.addEventListener('click',e=>{ e.stopPropagation(); chartState.ind=!chartState.ind; redraw(); });
+  redraw();
+}
+
+function render(){
+  const tb=document.getElementById('tb'); tb.innerHTML='';
+  let rows=RAW.filter(matches);
+  rows.sort((a,b)=>{const ka=sortKey(a),kb=sortKey(b);return (ka<kb?-1:ka>kb?1:0)*state.dir;});
+  document.getElementById('s-total').textContent=RAW.length.toLocaleString();
+  document.getElementById('s-buy').textContent=RAW.filter(r=>r.isbuy).length.toLocaleString();
+  document.getElementById('s-shown').textContent=rows.length.toLocaleString();
+  // Default View chip lights up (like the filters) only when NO filter/search is applied
+  const f=state.filters, atDefault=!state.q && !f.fell.size && !f.comeback.size && !f.cheap.size && !f.cap.size;
+  document.getElementById('reset').setAttribute('aria-pressed', String(atDefault));
+  document.getElementById('empty').hidden=rows.length>0;
+  const frag=document.createDocumentFragment();
+  for(const r of rows){
+    const tr=document.createElement('tr'); tr.className='row'; tr.tabIndex=0;
+    tr.setAttribute('aria-expanded', state.open===r.ticker?'true':'false');
+    const m1=r.m1,m3=r.m3,rel=r.m2.reliable;
+    const cheapFig = m3.mode==='trend'? signpct(m3.vs_usual)+' vs usual' : pct(m3.room_10)+' room';
+    tr.innerHTML=`
+      <td class="co"><div class="tk">${r.ticker}</div><div class="nm">${r.name}</div></td>
+      <td class="sec">${r.sector}</td>
+      <td class="num cell-fig">${fmtCap(r.mcap)}</td>
+      <td><span class="pill ${cls[r.t.fell]}">${r.t.fell}</span><div class="cell-sub">${signpct(m1.drawdown)} · ${m1.days_since_high}d</div></td>
+      <td><span class="pill ${cls[r.t.comeback]}">${r.t.comeback}</span><div class="cell-sub">${rel?'to '+pct(rel.depth)+' · '+mo(rel.median_recovery_days)+'mo':'—'}</div></td>
+      <td><span class="pill ${cls[r.t.cheap]}">${r.t.cheap}</span><div class="cell-sub">${cheapFig}</div></td>
+      <td><span class="cell-sub">— M4–M7</span></td>
+      <td class="links">
+        <a href="https://finance.yahoo.com/quote/${r.ticker}" target="_blank" rel="noopener" title="Yahoo Finance" onclick="event.stopPropagation()">Y!</a>
+        <a href="https://www.google.com/finance/quote/${r.ticker}" target="_blank" rel="noopener" title="Google Finance" onclick="event.stopPropagation()">G</a></td>
+      <td class="exp">${state.open===r.ticker?'−':'+'}</td>`;
+    const toggle=()=>{ const opening=state.open!==r.ticker; state.open=opening?r.ticker:null; if(opening) chartState={win:'MAX',ind:false}; render(); };
+    tr.addEventListener('click',toggle);
+    tr.addEventListener('keydown',e=>{if(e.key==='Enter'){toggle();}});
+    frag.appendChild(tr);
+    if(state.open===r.ticker){
+      const dr=document.createElement('tr'); dr.className='detail';
+      dr.innerHTML=`<td colspan="9">${detail(r)}</td>`; frag.appendChild(dr);
+    }
+  }
+  tb.appendChild(frag);
+  if(state.open){ const openR=rows.find(x=>x.ticker===state.open); const wrap=tb.querySelector('tr.detail .chartwrap'); if(openR&&wrap) mountChart(wrap,openR); }
+}
+
+// filter chips
+document.querySelectorAll('.chips').forEach(g=>{
+  const dim=g.dataset.dim; if(!dim) return;   // skip the Show toggle (handled separately)
+  g.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{
+    const v=c.dataset.v, s=state.filters[dim], on=s.has(v);
+    on?s.delete(v):s.add(v); c.setAttribute('aria-pressed',(!on).toString()); render();
+  }));
+});
+document.getElementById('q').addEventListener('input',e=>{state.q=e.target.value; render();});
+document.getElementById('sortsel').addEventListener('change',e=>{state.sort=e.target.value; state.dir=1; render();});
+// Default View button: clears all filters/search/open row -> the default buy list
+document.getElementById('reset').addEventListener('click',()=>{
+  state.filters={fell:new Set(),comeback:new Set(),cheap:new Set(),cap:new Set()}; state.q=''; state.def=true; state.open=null;
+  document.querySelectorAll('.chips[data-dim] .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
+  document.getElementById('q').value=''; render();});
+document.querySelectorAll('th[data-sort]').forEach(th=>th.addEventListener('click',()=>{
+  const k=th.dataset.sort; if(k==='mcap')return;
+  if(state.sort===k)state.dir*=-1; else{state.sort=k; state.dir=1;} render();}));
+
+render();
+</script>

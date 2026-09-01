@@ -1,0 +1,9 @@
+# Raw data cache — large, reproducible, never committed (Tenet 1: pull once,
+# compute from the cache). Regenerate with scripts/pull.py.
+data/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
