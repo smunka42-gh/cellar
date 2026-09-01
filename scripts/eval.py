@@ -18,6 +18,7 @@ Expected keys:
   m4_tier        High | Solid | Mixed | Weak  (relative quality)
   m4_available   True | False
   m5             held_up | declining          (mispricing test)
+  m5_outlier     True | False                 (one-off / low-confidence flag)
   m6_available   True | False
   m6_dir         cheap | mid | expensive      (earnings-yield percentile vs own history)
   m7_clears      True | False                 (clears the hoarding floor)
@@ -69,13 +70,14 @@ GOLDEN = [
     # --- mispricing test (M5): fell on real deterioration ---
     # NKE: the value trap — cheap on its own earnings and down big, but declining.
     # Same cheap+fell signal as PYPL below, opposite verdict (M5 is the discriminator).
-    {"t": "NKE", "expect": {"m5": "declining", "m1_fell": "Big", "m6_dir": "cheap"}, "why": "cheap and fallen, but earnings still sliding"},
+    {"t": "NKE", "expect": {"m5": "declining", "m1_fell": "Big", "m6_dir": "cheap", "m5_outlier": False}, "why": "cheap and fallen, but earnings still sliding — an ordinary decline, not a one-off"},
     # INTC: the M5/M7 split in one name. M7 (long-run floor) CLEARS — profitable 80% of
     # the decade, coverage 22.7x — because the floor asks "durable business over a long
     # window", which Intel was. The current collapse (NI YoY -278%) is M5's job, and M5
     # correctly reads `declining`. M7 is not a recency gate; M5 is. (eval finding)
-    {"t": "INTC", "expect": {"m5": "declining", "m7_clears": True}, "why": "long-run sound (floor), collapsing now (M5)", "edge": "M5/M7 division of labor"},
-    {"t": "LULU", "expect": {"m5": "declining"}, "why": "sharp margin/earnings drop"},
+    {"t": "INTC", "expect": {"m5": "declining", "m7_clears": True, "m5_outlier": True}, "why": "long-run sound (floor), collapsing now (M5), one-off-heavy quarter", "edge": "M5/M7 division of labor"},
+    {"t": "LULU", "expect": {"m5": "declining", "m5_outlier": False}, "why": "sharp but ordinary margin/earnings drop"},
+    {"t": "TGT", "expect": {"m5_outlier": True}, "why": "outsized earnings rise (+101%) vs its own ±19% history — one-off flag", "edge": "one-off earnings swing (rise)"},
 
     # --- mispricing test: fell/dipped but fundamentals fine (the good case) ---
     {"t": "CRM", "expect": {"m5": "held_up", "m7_clears": True}, "why": "growing while price lagged"},
@@ -115,6 +117,7 @@ def actual(rec, key):
     if key == "m4_tier":      return m4.get("tier") if m4.get("available") else None
     if key == "m4_available": return bool(m4.get("available"))
     if key == "m5":           return m5.get("status") if m5.get("available") else None
+    if key == "m5_outlier":   return bool(m5.get("outlier")) if m5.get("available") else None
     if key == "m6_available": return bool(m6.get("available"))
     if key == "m6_dir":
         if not m6.get("available"): return None

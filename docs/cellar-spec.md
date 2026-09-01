@@ -218,13 +218,43 @@ filing but whether the latest fundamentals **declined or held up**:
 **Financials fall back to annual** year-over-year, since their quarterly tagging
 is unreliable (a bank's quarterly figures come and go under shifting concepts).
 Recent listings with no year-ago comparable read *no timely read*. Everything
-carries an **"as of [quarter-end]"** stamp. It shows on the **Fell? card** (the
-dip's cause) and as a clause in the verdict — a *declining* read **tempers**
-even a cheap, resilient, floor-clearing name; a *held-up* read **strengthens**
-the buy case. It does not hard-gate the buy list (M7 is the hard gate); it is an
-early warning. Calibrated + validated on a fell-on-bad-news vs. fell-on-nothing
-basket (Nike/Lululemon/Intel → declining; Costco/Google/recovered-Target →
-held up). ~24% of the universe reads declining. `[calibrate: the thresholds]`
+carries an **"as of [quarter-end]"** stamp. It shows on its own **Mispriced?
+card** and as a clause in the verdict — a *declining* read **tempers** even a
+cheap, resilient, floor-clearing name; a *held-up* read **strengthens** the buy
+case. It does not hard-gate the buy list (M7 is the hard gate); it is an early
+warning. Calibrated + validated on a fell-on-bad-news vs. fell-on-nothing basket
+(Nike/Lululemon/Intel → declining; Costco/Google/recovered-Target → held up).
+~24% of the universe reads declining. `[calibrate: the thresholds]`
+
+**Low-confidence (one-off) flag.** A single quarter's net income can crater — or
+spike — on a non-recurring item (a legal charge, a writedown, a tax item) with
+the business otherwise fine, which would make the *declining/held-up* read
+misleading. So the latest earnings move is checked against the company's **own
+history** of year-over-year moves: if it is beyond the **85th percentile** of
+that history *and* larger than **40%** in magnitude, the read is marked
+**low-confidence** — an outsized swing *for this company*, often a one-off, so
+trust the single quarter less and read the recent coverage. It is symmetric
+(a huge rise flags too) and, crucially, **changes nothing** — not the status,
+not the verdict, not the buy list — it only adds a caveat on the card, using the
+numbers (this move vs. the usual ±swing). The two conditions each pull weight:
+the percentile catches what is unusual *for this company* while sparing
+naturally-volatile names (Salesforce, NVIDIA swing wildly as a rule); the floor
+spares tiny companies whose percentile clears on noise. Validated: flags Intel
+(−278% vs a ±41% usual swing; revenue was actually *up* 25% — the signature of a
+charge) and Target (+101% vs ±19%); leaves ordinary declines unflagged (Nike
+−35%, Lululemon −38%). ~15% of the universe carries the flag. This closes the
+one-off-item residual in [`docs/data-hazards.md`](data-hazards.md) (H).
+
+**Recent coverage (context, not a measure).** Beneath the six cards, a few
+recent **publisher** headlines per company — title, date, source, the
+publisher's *own* summary, and a link to the full article — pulled from yfinance
+(no API key, cached in the daily pull) and filtered to stories that actually
+name the company. Cellar never authors, rewrites, or interprets them, and they
+gate nothing: they are qualitative context beside the M5 signal, never a Cellar
+verdict. When nothing qualifies, the card is simply absent (never a fabricated
+summary). Deliberately **no LLM** — the one place a model summary would sit next
+to filing-grounded numbers is the one place an unverifiable claim would do the
+most damage.
 
 ### 4.6 · M6 — Cheap on earnings *(Cheap?, part 2)*
 
@@ -352,7 +382,9 @@ is/isn't a mispricing*:
 3. **Comes back?** (M2 reliable recovery)
 4. **Cheap?** (M3 price × M6 earnings, side by side)
 5. **Fell?** (M1 dip from the recent high)
-6. **Mispriced?** (M5 — was the fall backed by real deterioration)
+6. **Mispriced?** (M5 — was the fall backed by real deterioration; carries a
+   **low-confidence flag** when the latest earnings move is unusually large for
+   the company, i.e. likely a one-off item — see §4.5)
 
 Below the six, a full-width **Recent coverage** card: a few recent publisher
 headlines (title, date, source, the publisher's own summary, a link to the full

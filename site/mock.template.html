@@ -183,6 +183,8 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
   border-radius:6px; padding:2px 7px; font-family:"IBM Plex Mono",monospace; white-space:nowrap}
 .rl b{color:var(--ink); font-weight:600}
 .floorflag{color:var(--warn); font-weight:600; text-transform:uppercase; font-size:9.5px; letter-spacing:.04em}
+.lowconf{margin:9px 0 2px; font-size:11.5px; color:var(--warn); background:var(--warn-bg); border:1px solid var(--warn); border-radius:8px; padding:8px 11px; line-height:1.5}
+.lowconf b{color:var(--warn)}
 .nnote{font-size:10.5px; color:var(--faint); font-style:italic; margin:2px 0 0}
 .newscard{grid-column:1/-1; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:15px 16px; box-shadow:var(--shadow)}
 .newslist{margin-top:10px}
@@ -595,7 +597,10 @@ function detail(r){
         ? `The drop came on <span class="hl-good">no deterioration</span> — fundamentals held up, so it looks like a <span class="hl-good">mispricing</span>.`
         : `Its fundamentals are <span class="hl-good">holding up</span> year-on-year.`;
     }
-    mispBody = `<p class="exwhy">${why}</p>
+    const lowconf = m5.outlier
+      ? `<p class="lowconf">⚠ <b>Low confidence</b> — this quarter's earnings move (${m5.ni_yoy!=null?signpct(m5.ni_yoy):'—'}) is far larger than this company's usual swing (about ±${m5.ni_typical!=null?pct(m5.ni_typical):'—'}), which is often a <b>one-off item</b> — a charge, writedown or tax — rather than a trend. Check the recent coverage below.</p>`
+      : '';
+    mispBody = `<p class="exwhy">${why}</p>${lowconf}
       <div class="kv"><span class="k">Revenue YoY</span><span class="v">${m5.rev_yoy!=null?signpct(m5.rev_yoy):'—'}</span></div>
       <div class="kv"><span class="k">Earnings YoY</span><span class="v">${m5.ni_yoy!=null?signpct(m5.ni_yoy):'—'}</span></div>
       <div class="kv"><span class="k">Basis</span><span class="v">${basisNote} · as of ${asof}</span></div>`;

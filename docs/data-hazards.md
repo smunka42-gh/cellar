@@ -95,7 +95,7 @@ handled by adjusting *what is measured* per sector, never by lowering the bar.
 
 | Event | What it does | At risk | Handling |
 |---|---|---|---|
-| **One-time charge / impairment / tax item** | A single quarter's net income drops sharply on a non-operating item, with the business fine | M5 | **Open / mitigated** — M5 can read a one-off quarter as *declining*; it only **tempers** the verdict (never gates the buy list), and the panel shows the actual revenue/earnings YoY so the cause is visible. A revenue+earnings (not earnings-only) rule limits false positives; further smoothing is a rigor-phase candidate. |
+| **One-time charge / impairment / tax item** | A single quarter's net income drops sharply — or spikes — on a non-operating item, with the business fine | M5 | **Guarded (low-confidence flag).** The latest earnings YoY move is compared to the company's *own* history of moves; beyond its 85th percentile **and** > 40% in magnitude, the M5 read is marked **low-confidence** on the card (this move vs. the usual ±swing) — an outsized swing *for this company*, often a one-off. Changes nothing (status, verdict, buy list); only caveats. The panel already shows revenue vs. earnings YoY, so a charge (revenue up, profit down — e.g. Intel) is visible. Symmetric; ~15% flagged. |
 | **Sector-wide shock year** | An exogenous event (a demand collapse) knocks a whole sector into loss for one year | M4, M7 | **Open** — not yet excused mechanically in Cellar (Vantage excluded such years from its profit gate; whether to port that is a rigor-phase decision). |
 
 ---
@@ -104,8 +104,12 @@ handled by adjusting *what is measured* per sector, never by lowering the bar.
 
 1. **Former-CIK merge** — recover the ~10 reorged names (Exxon, BlackRock, …), verified per name against EDGAR.
 2. **Merger-history comparability** — pre-merger comparatives for combined entities (Paramount Skydance, Smurfit Westrock).
-3. **Fiscal-year-shift gaps in M5** — a company mid-shift can miss a comparable period.
-4. **One-off-item smoothing in M5** — reduce false *declining* reads from non-recurring charges.
+3. **Fiscal-year-shift gaps** — companies that change their fiscal calendar break
+   clean YoY (M5) and period alignment (M4/M6/M7); slated for **custom per-company
+   measurement handling**, not a single universal rule (see C · fiscal-year-end).
+4. ~~One-off items in M5~~ — **done.** A low-confidence flag (H · one-time charge)
+   marks an earnings move that is outsized vs the company's own history; ~15%
+   flagged, validated on Intel/Target.
 5. **Sector-wide shock years** — decide whether to excuse them mechanically (M4/M7).
 
 Each is currently **surfaced honestly** (the affected company reads *can't assess*
