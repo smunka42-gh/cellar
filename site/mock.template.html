@@ -185,18 +185,20 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
 .floorflag{color:var(--warn); font-weight:600; text-transform:uppercase; font-size:9.5px; letter-spacing:.04em}
 .lowconf{margin:9px 0 2px; font-size:11.5px; color:var(--warn); background:var(--warn-bg); border:1px solid var(--warn); border-radius:8px; padding:8px 11px; line-height:1.5}
 .lowconf b{color:var(--warn)}
-.nnote{font-size:10.5px; color:var(--faint); font-style:italic; margin:2px 0 0}
 .newscard{grid-column:1/-1; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:15px 16px; box-shadow:var(--shadow)}
-.newslist{margin-top:10px}
-.nitem{display:grid; grid-template-columns:120px 1fr auto; gap:20px; align-items:start; border-top:1px dashed var(--line); padding:13px 0}
-.nitem:first-child{border-top:none}
-.nmeta{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--faint); line-height:1.6}
-.ntitle{font-size:13px; font-weight:600; color:var(--ink); text-decoration:none; line-height:1.4}
-.ntitle:hover{color:var(--accent)}
-.nbody .nsum{margin:5px 0 0; font-size:12px; color:var(--muted); line-height:1.5}
-.nread{font-size:11px; color:var(--accent); text-decoration:none; font-weight:600; white-space:nowrap; align-self:center}
-.nread:hover{text-decoration:underline}
-@media(max-width:640px){.nitem{grid-template-columns:1fr; gap:5px} .nread{align-self:start}}
+.cvhead{display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap}
+.yhlink{font-size:11px; color:var(--accent); text-decoration:none; font-weight:600; white-space:nowrap}
+.yhlink:hover{text-decoration:underline}
+.fnote{font-size:10.5px; color:var(--faint); font-style:italic; margin:3px 0 0}
+.filinglist{margin-top:10px}
+.fitem{display:grid; grid-template-columns:96px 1fr auto; gap:16px; align-items:center; border-top:1px dashed var(--line); padding:9px 0}
+.fitem:first-child{border-top:none}
+.fmeta{font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--faint)}
+.flabel{font-size:13px; color:var(--ink); font-weight:500}
+.fread{font-size:11px; color:var(--accent); text-decoration:none; font-weight:600; white-space:nowrap}
+.fread:hover{text-decoration:underline}
+.fnone{font-size:12px; color:var(--faint); font-style:italic; padding:6px 0}
+@media(max-width:640px){.fitem{grid-template-columns:1fr; gap:3px} .fread{justify-self:start}}
 .minibar{display:flex; gap:2px; align-items:flex-end; height:34px; margin-top:8px}
 .minibar i{flex:1; background:var(--accent-soft); border-radius:1px 1px 0 0; min-height:2px}
 .coming{grid-column:1/-1; border:1px dashed var(--line); border-radius:10px; padding:12px 15px;
@@ -615,11 +617,17 @@ function detail(r){
   // Recent coverage — its OWN full-width card below the six, so it isn't read as
   // part of the mispricing verdict and doesn't distort the card grid. Publisher
   // headlines only; Cellar never authors or interprets them.
-  let newsCard='';
-  if((r.news||[]).length){
-    const items=r.news.map(a=>`<div class="nitem"><div class="nmeta">${a.d}${a.pub?'<br>'+a.pub:''}</div><div class="nbody"><a class="ntitle" href="${a.u}" target="_blank" rel="noopener">${a.t}</a><p class="nsum">${a.s}</p></div><a class="nread" href="${a.u}" target="_blank" rel="noopener">Read full article →</a></div>`).join('');
-    newsCard=`<div class="newscard"><div class="q">Recent coverage</div><div class="nnote">Headlines that mention the company — context, not a Cellar verdict.</div><div class="newslist">${items}</div></div>`;
+  // Recent SEC filings — the authoritative "what the company has officially
+  // disclosed since its last financial report" (from EDGAR). Plus a link out to
+  // Yahoo for press / earnings calls / press releases (their tabs, always current).
+  const yahooNews=`https://finance.yahoo.com/quote/${encodeURIComponent(r.ticker)}/news/`;
+  let filingsRows;
+  if((r.filings||[]).length){
+    filingsRows=r.filings.map(f=>`<div class="fitem"><div class="fmeta">${f.d}</div><div class="flabel">${f.label}</div><a class="fread" href="${f.u}" target="_blank" rel="noopener">View filing →</a></div>`).join('');
+  } else {
+    filingsRows=`<div class="fnone">No material filings since its last report.</div>`;
   }
+  const filingsCard=`<div class="newscard"><div class="cvhead"><div class="q">Recent SEC filings</div><a class="yhlink" href="${yahooNews}" target="_blank" rel="noopener">Full coverage on Yahoo Finance →</a></div><div class="fnote">Material filings since its last periodic report — the company's own disclosures, straight from SEC EDGAR.</div><div class="filinglist">${filingsRows}</div></div>`;
 
   const summaryHtml = `<div class="readout ${v.cls}">
     <div class="verdict">${v.label}${v.hoard==='na'?'<span class="vtag">hoarding floor: unverified</span>':''}</div>
@@ -650,7 +658,7 @@ function detail(r){
       <div class="kv"><span class="k">Market cap</span><span class="v">${fmtCap(r.mcap)}</span></div>
       <div class="kv"><span class="k">History</span><span class="v">${r.history_years} yrs${r.thin_history?' · thin':''}</span></div></div>
     ${mispHtml}
-    ${newsCard}
+    ${filingsCard}
     <div class="coming">Reads top to bottom as one sentence: <b>Worth hoarding?</b> (M7, the gate) · <b>Good business?</b> (M4) · <b>Comes back?</b> (M2) · <b>Cheap?</b> (M3 × M6) · <b>Fell?</b> (M1) · <b>Mispriced?</b> (M5, with recent coverage). Every number links to its full working.</div>
   </div></div>`;
 }

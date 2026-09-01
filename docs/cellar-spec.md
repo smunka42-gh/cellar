@@ -245,16 +245,28 @@ charge) and Target (+101% vs ±19%); leaves ordinary declines unflagged (Nike
 −35%, Lululemon −38%). ~15% of the universe carries the flag. This closes the
 one-off-item residual in [`docs/data-hazards.md`](data-hazards.md) (H).
 
-**Recent coverage (context, not a measure).** Beneath the six cards, a few
-recent **publisher** headlines per company — title, date, source, the
-publisher's *own* summary, and a link to the full article — pulled from yfinance
-(no API key, cached in the daily pull) and filtered to stories that actually
-name the company. Cellar never authors, rewrites, or interprets them, and they
-gate nothing: they are qualitative context beside the M5 signal, never a Cellar
-verdict. When nothing qualifies, the card is simply absent (never a fabricated
-summary). Deliberately **no LLM** — the one place a model summary would sit next
-to filing-grounded numbers is the one place an unverifiable claim would do the
-most damage.
+**Recent SEC filings (context, not a measure).** Beneath the six cards, the
+company's own recent SEC filings — from EDGAR, the same source every Cellar
+number traces to. "Recent" = the most recent periodic report (10-K or 10-Q, the
+last full financial snapshot) plus every material event (8-K) and proxy (DEF
+14A) filed on or since it, so it reads as *"what's happened since we last saw the
+numbers."* Material forms only — the insider-trade (Form 3/4/5), ownership (SC
+13*) and registration (S-*, 424B) churn is excluded (a big bank files thousands
+of those a quarter). Each row: date · a plain-language label (8-K item codes
+decoded — "Quarterly earnings released", "Leadership change", "Restructuring /
+exit costs", "Restatement — prior financials not reliable") · a link to the
+filing on EDGAR. It's authoritative and definitionally about the company — no
+relevance guessing, no invented summaries, **no LLM**. It corroborates the M5
+one-off flag: a *Restructuring* or *Impairment* 8-K filed the same quarter as a
+wild earnings swing confirms the one-off from the company's own filing.
+
+Why filings and not press: press coverage is continuous but noisy and biased to
+large names; 8-Ks are authoritative but *episodic*, so neither is "recent
+coverage" on its own. Rather than half-build a worse copy of a news page, the
+card also carries a **"Full coverage on Yahoo Finance →"** link to the company's
+Yahoo news page (its All / News / Earnings Calls / Press Releases / SEC Filings
+tabs, always current) — linking, not re-hosting. So: our authoritative filings
+inline, their comprehensive press one click away.
 
 ### 4.6 · M6 — Cheap on earnings *(Cheap?, part 2)*
 
@@ -386,11 +398,12 @@ is/isn't a mispricing*:
    **low-confidence flag** when the latest earnings move is unusually large for
    the company, i.e. likely a one-off item — see §4.5)
 
-Below the six, a full-width **Recent coverage** card: a few recent publisher
-headlines (title, date, source, the publisher's own summary, a link to the full
-article) — **context beside the M5 signal, never a Cellar verdict**, pulled from
-yfinance with no model authoring or interpretation (see §4.5). Each card opens
-the **real workings** — the multi-year values, how the number was derived, plain
+Below the six, a full-width **Recent SEC filings** card: the company's own
+material filings since its last periodic report (dated, plain-language labels,
+EDGAR links), plus a **"Full coverage on Yahoo Finance →"** link for press,
+earnings calls and press releases — **context beside the measures, never a Cellar
+verdict**, authoritative and un-invented (see §4.5). Each measure card opens the
+**real workings** — the multi-year values, how the number was derived, plain
 English — and **every headline number cites its working**. Nothing shown is
 un-auditable.
 
