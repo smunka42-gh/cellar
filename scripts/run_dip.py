@@ -19,7 +19,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from cellar import dip, value, quality  # noqa: E402
+from cellar import dip, value, quality, floor  # noqa: E402
 
 DATA = ROOT / "data"
 
@@ -55,6 +55,7 @@ def main():
             m["name"] = r["name"]; m["sector"] = r["sector"]
             m["mcap"] = mcaps.get(r["ticker"])
             m["m6"] = value.m6(r["ticker"], r["cik"])   # cheap on earnings
+            m["m7"] = floor.m7(r["cik"], r["sector"])    # absolute solvency floor
             results.append(m)
         except Exception as e:
             fails.append((r["ticker"], f"{type(e).__name__}: {e}"))

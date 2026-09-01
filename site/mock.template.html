@@ -176,6 +176,7 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
 .rl{font-size:10.5px; color:var(--muted); background:var(--raised); border:1px solid var(--line);
   border-radius:6px; padding:2px 7px; font-family:"IBM Plex Mono",monospace; white-space:nowrap}
 .rl b{color:var(--ink); font-weight:600}
+.floorflag{color:var(--warn); font-weight:600; text-transform:uppercase; font-size:9.5px; letter-spacing:.04em}
 .minibar{display:flex; gap:2px; align-items:flex-end; height:34px; margin-top:8px}
 .minibar i{flex:1; background:var(--accent-soft); border-radius:1px 1px 0 0; min-height:2px}
 .coming{grid-column:1/-1; border:1px dashed var(--line); border-radius:10px; padding:12px 15px;
@@ -216,9 +217,9 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
       <div class="asof">Snapshot · __ASOF__</div>
     </div>
     <p class="lede">Every company, every day, answered in plain questions —
-      <b>Fell?</b>, <b>Comes back?</b>, <b>Cheap?</b>, and now <b>Good business?</b>
-      (quality, ranked against sector peers over the last decade). The mispricing
-      test and the absolute solvency floor attach next. Click any row for the real workings.</p>
+      <b>Fell?</b>, <b>Comes back?</b>, <b>Cheap?</b>, and <b>Good business?</b>
+      (the <b>hoarding floor</b> — is it worth owning at all? — plus quality vs. peers).
+      The mispricing test attaches next. Click any row for the real workings.</p>
   </header>
 
   <div class="toolbar">
@@ -345,25 +346,29 @@ const m3Tier = m3 => m3.mode==='trend'
 // Quality (M4) tier → row-pill colour.
 const QUAL_PILL = {High:'t-good', Solid:'t-good', Mixed:'t-warn', Weak:'t-weak'};
 
-// The top-of-panel verdict — a deterministic read of the answers, now gated on
-// quality (M4). A fallen, cheap, resilient name is only "worth buying" if the
-// business is actually good; a weak business makes the dip suspect. Where we
-// lack the fundamentals to judge quality, the verdict is tagged as unconfirmed.
+// The top-of-panel verdict — a deterministic read of the answers, led by the
+// HOARDING GATE (M7). If the business isn't worth hoarding, the dip, the
+// recovery record and the cheapness are all moot. Only once it clears the floor
+// do the timing questions decide whether now is the moment to add, with M4 as
+// the relative-quality context.
 const hl = (t,tone) => `<span class="hl-${tone}">${t}</span>`;
 function verdict(r){
-  const f=r.t.fell, cb=r.t.comeback, cell=r.cr.cell, q=r.m4;
-  if(f==='Minimal') return {label:'Not much of a dip', cls:'v-weak'};
-  if(cb==='None')   return {label:"Falls, but doesn't reliably recover", cls:'v-weak'};
-  if(cb==='Past')   return {label:'Past its reliable range', cls:'v-warn'};
-  if(cell==='trap') return {label:'Cheap on price, but earnings fell more', cls:'v-warn'};
-  if(cell==='full') return {label:'In its reliable range, but fully priced', cls:'v-warn'};
+  const f=r.t.fell, cb=r.t.comeback, cell=r.cr.cell, q=r.m4, m7=r.m7;
+  // 1 — the hoarding gate dominates everything
+  if(m7 && m7.available && !m7.clears) return {label:'Not worth hoarding', cls:'v-weak', hoard:'fail'};
+  const hoard = (!m7 || !m7.available) ? 'na' : 'ok';   // floor can't be assessed?
+  // 2 — it clears the floor (or we can't judge it): is now a good entry?
+  if(f==='Minimal') return {label:'Worth hoarding — no dip yet', cls:'v-weak', hoard};
+  if(cb==='None')   return {label:"Falls, but doesn't reliably recover", cls:'v-weak', hoard};
+  if(cb==='Past')   return {label:'Past its reliable range', cls:'v-warn', hoard};
+  if(cell==='trap') return {label:'Cheap on price, but earnings fell more', cls:'v-warn', hoard};
+  if(cell==='full') return {label:'In its reliable range, but fully priced', cls:'v-warn', hoard};
   const priceGood = cell==='both' || cell==='growing' || (cell==='priceonly' && r.cr.priceCheap);
-  if(!priceGood) return {label:'In its reliable range, not a discount', cls:'v-warn'};
-  const tier = (q && q.available) ? q.tier : null;   // the price setup is there — quality decides
-  if(tier==='Weak')  return {label:'Cheap, but a weak business', cls:'v-warn'};
-  if(tier==='Mixed') return {label:'A dip in a middling business', cls:'v-warn'};
-  if(!tier)          return {label:'A dip worth buying', cls:'v-good', pending:true};  // quality unconfirmed
-  return {label:'A dip worth buying', cls:'v-good'};   // High or Solid quality
+  if(!priceGood) return {label:'In its reliable range, not a discount', cls:'v-warn', hoard};
+  // 3 — worth hoarding, at a real entry. M4 is the relative-quality context.
+  const tier = (q && q.available) ? q.tier : null;
+  if(tier==='Weak' || tier==='Mixed') return {label:'A dip, but only a middling business', cls:'v-warn', hoard};
+  return {label:'A dip worth hoarding', cls:'v-good', hoard};   // High/Solid quality (or M4 n/a)
 }
 
 RAW.forEach(r=>{
@@ -377,10 +382,11 @@ RAW.forEach(r=>{
   const priceFrac = Math.max(0, Math.min(1, r.m3.mode==='trend' ? -r.m3.vs_usual/0.30 : r.m3.room_10));
   const base = {both:4, growing:3, trap:2, full:1}[cr.cell];
   r.cheapScore = cr.eAvail ? base + cr.ep/100 : 1 + priceFrac;
-  // Buy view: fell + reliably recovers + cheap (price) + a genuinely good
-  // business (High/Solid quality). Quality is the gate, not a footnote.
+  // Buy view: worth hoarding (M7 clears the floor) + fell + reliably recovers +
+  // cheap (price) + high relative quality (M4 High/Solid). M7 is the hard gate.
   const priceGood = cr.cell==='both' || cr.cell==='growing' || (cr.cell==='priceonly' && m3Tier(r.m3)!=='Full');
-  r.isbuy = (r.t.fell!=='Minimal') && (r.t.comeback==='Strong') && priceGood &&
+  r.isbuy = !!(r.m7 && r.m7.available && r.m7.clears) &&
+    (r.t.fell!=='Minimal') && (r.t.comeback==='Strong') && priceGood &&
     (r.m4 && r.m4.available && (r.m4.tier==='High' || r.m4.tier==='Solid'));
 });
 
@@ -466,54 +472,79 @@ function detail(r){
     : cr.cell==='growing'?'Growing into its price'
     : cr.cell==='trap'?'Cheap on price, dearer on earnings'
     : 'Fully priced';
-  // Top-of-panel summary: the verdict + a woven, evidence-highlighted narrative,
-  // every clause pinned to a computed value (template, not model-written).
-  const v=verdict(r);
+  // Top-of-panel summary + the Good business? box. Deterministic, every clause
+  // pinned to a computed value — and led by the hoarding gate (M7).
+  const v=verdict(r), m7=r.m7, q=r.m4;
   const fellPhrase = m1.days_since_high<=120?'a fresh drop': m1.days_since_high<=365?'a months-long slide':'a slow, multi-year slide';
+
+  // Which M7 gates a below-floor name fails (for the narrative).
+  const floorReasons=[];
+  if(m7 && m7.available){
+    if(!m7.profit_ok)  floorReasons.push(`profitable only ${Math.round(m7.profit_frac*100)}% of the decade`);
+    if(!m7.cash_ok)    floorReasons.push(`operating cash often negative`);
+    if(!m7.solvent_ok) floorReasons.push(m7.solvency_basis==='capital'?`thin capital (${Math.round(m7.equity_assets*100)}% equity)`:`interest barely covered (${m7.coverage}×)`);
+  }
+
   const s=[`Down ${hl(pct(Math.abs(m1.drawdown)),'num')} from its ${m1.high_window_years}-year high — ${fellPhrase}.`];
-  if(rel){
-    const inside = Math.abs(m1.drawdown) <= rel.depth+0.005;
-    s.push(`It ${hl('reliably recovers','good')} from drops as deep as ${hl(pct(rel.depth),'good')}, back to its high in a median of ${hl(mo(rel.median_recovery_days)+' months','num')} — ${hl(rel.occurrences+'×','num')} on record — so today's dip sits ${inside?hl('inside','good'):hl('past','warn')} that range.`);
+  if(m7 && m7.available && !m7.clears){
+    // hoarding gate fails — the dip, recovery and cheapness are all moot
+    s.push(`But it ${hl('fails the hoarding floor','warn')} — ${floorReasons.join('; ')} — so the dip doesn't matter: a cheap way to own a weak business.`);
   } else {
-    s.push(`But its dips ${hl("don't dependably climb back",'warn')} — not a name to accumulate on weakness.`);
+    if(rel){
+      const inside = Math.abs(m1.drawdown) <= rel.depth+0.005;
+      s.push(`It ${hl('reliably recovers','good')} from drops as deep as ${hl(pct(rel.depth),'good')}, back to its high in a median of ${hl(mo(rel.median_recovery_days)+' months','num')} — ${hl(rel.occurrences+'×','num')} on record — so today's dip sits ${inside?hl('inside','good'):hl('past','warn')} that range.`);
+    } else {
+      s.push(`But its dips ${hl("don't dependably climb back",'warn')} — not a name to accumulate on weakness.`);
+    }
+    if(cr.cell==='both')          s.push(`It's ${hl('cheap on both price and earnings','good')} against its own history.`);
+    else if(cr.cell==='growing')  s.push(`It's not cheap on price, yet ${hl('cheaper on earnings than '+cr.ep+'% of its own history','good')} — ${hl('growing into its price','good')}.`);
+    else if(cr.cell==='trap')     s.push(`It looks cheap on price, but earnings fell further — ${hl('a value-trap risk','warn')}, cheaper than only ${hl(cr.ep+'%','warn')} of its earnings history.`);
+    else if(cr.cell==='full')     s.push(`On price and earnings it's ${hl('fully valued','warn')} — no discount today.`);
+    else                          s.push(cr.priceCheap?`It's ${hl('below its usual price','good')}, though its earnings can't be read to confirm.`:`It's ${hl('near the top of its range','warn')}, and its earnings can't be read to confirm.`);
+    if(q && q.available){
+      if(q.tier==='High'||q.tier==='Solid') s.push(`On quality it's ${hl(q.tier.toLowerCase(),'good')} — the ${hl(ord(q.level),'good')} percentile of ${q.peer_group} peers.`);
+      else s.push(`Its relative quality is ${hl('middling','warn')} — the ${hl(ord(q.level),'warn')} percentile of ${q.peer_group} peers.`);
+    }
+    if(m7 && m7.available)  s.push(`It ${hl('clears the hoarding floor','good')} — consistently profitable, cash-generative, debt serviceable.`);
+    else if(m7)            s.push(`Its ${hl("hoarding floor can't be confirmed",'warn')} yet — too little history.`);
   }
-  if(cr.cell==='both')          s.push(`And it's ${hl('cheap on both price and earnings','good')} against its own history.`);
-  else if(cr.cell==='growing')  s.push(`It's not cheap on price, yet ${hl('cheaper on earnings than '+cr.ep+'% of its own history','good')} — ${hl('growing into its price','good')}.`);
-  else if(cr.cell==='trap')     s.push(`It looks cheap on price, but earnings fell further — ${hl('a value-trap risk','warn')}, cheaper than only ${hl(cr.ep+'%','warn')} of its earnings history.`);
-  else if(cr.cell==='full')     s.push(`On price and earnings it's ${hl('fully valued','warn')} — no discount today.`);
-  else                          s.push(cr.priceCheap?`It's ${hl('below its usual price','good')}, though its earnings can't be read to confirm.`:`It's ${hl('near the top of its range','warn')}, and its earnings can't be read to confirm.`);
-  // Quality (M4) — the gate: add its clause to the narrative and build its box.
-  const q=r.m4;
-  if(q && q.available){
-    if(q.tier==='High' || q.tier==='Solid')
-      s.push(`The business is ${hl(q.tier.toLowerCase()+'-quality','good')} — around the ${hl(ord(q.level),'good')} percentile of ${q.peer_group} peers${q.consistency>=40?`, ${hl(ord(q.consistency)+' even at its worst year','good')}`:''}.`);
-    else if(q.tier==='Mixed')
-      s.push(`The business itself is ${hl('middling','warn')} — about the ${hl(ord(q.level),'warn')} percentile of ${q.peer_group} peers.`);
-    else
-      s.push(`But the business is ${hl('weak','warn')} — only the ${hl(ord(q.level),'warn')} percentile of ${q.peer_group} peers, so the dip may be deserved.`);
-  } else if(q){
-    s.push(`Its ${hl("quality can't be judged yet",'warn')} — too few years of fundamentals.`);
+
+  // Good business? box: the hoarding floor (M7, the gate) then the relative quality (M4).
+  let floorHtml='';
+  if(m7 && m7.available){
+    const gate=(ok,label,val)=>`<div class="kv"><span class="k">${ok?'✓':'✗'} ${label}</span><span class="v">${val}</span></div>`;
+    const cashRow = m7.cash_frac===null
+      ? `<div class="kv"><span class="k">· operating cash</span><span class="v">n/a · financial</span></div>`
+      : gate(m7.cash_ok,'operating cash', Math.round(m7.cash_frac*100)+'% of yrs +');
+    const solvRow = m7.solvency_basis==='no-debt'
+      ? `<div class="kv"><span class="k">✓ debt serviceable</span><span class="v">no debt</span></div>`
+      : m7.solvency_basis==='capital'
+        ? gate(m7.solvent_ok,'adequately capitalised', Math.round(m7.equity_assets*100)+'% equity/assets')
+        : gate(m7.solvent_ok,'debt serviceable', m7.coverage+'× interest cover');
+    floorHtml=`<div class="subh">Hoarding floor · absolute</div>
+      <p class="exwhy"><b>${m7.clears?'Clears the floor — worth hoarding.':'Below the floor — not worth hoarding.'}</b></p>
+      ${gate(m7.profit_ok,'consistently profitable', Math.round(m7.profit_frac*100)+'% of yrs +')}${cashRow}${solvRow}`;
+  } else if(m7){
+    floorHtml=`<div class="subh">Hoarding floor · absolute</div><p class="exwhy exna">Can't assess — too little history.</p>`;
   }
-  let bizHtml;
+  let qualHtml='';
   if(q && q.available){
-    const chips=Object.entries(q.ratio_level).sort((a,b)=>b[1]-a[1])
-      .map(([nm,pc])=>`<span class="rl">${nm} <b>${pc}</b></span>`).join('');
-    const bh={High:'High-quality business',Solid:'Solid business',Mixed:'Middling business',Weak:'Weak business'}[q.tier];
-    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>${bh}</h4>
-      <p class="exwhy">Against <b>${q.peer_group}</b> peers it typically ranks in the <b>${ord(q.level)} percentile</b> on the fundamentals we track${q.consistency>=40?`, and even in its worst year of the last decade it held the <b>${ord(q.consistency)}</b>`:` — though its worst year dropped to the <b>${ord(q.consistency)}</b>`}.</p>
+    const chips=Object.entries(q.ratio_level).sort((a,b)=>b[1]-a[1]).map(([nm,pc])=>`<span class="rl">${nm} <b>${pc}</b></span>`).join('');
+    qualHtml=`<div class="subh">Relative quality · vs ${q.peer_group} (${q.peer_n})</div>
+      <p class="exwhy">Typically the <b>${ord(q.level)} percentile</b>${q.consistency>=40?`, and <b>${ord(q.consistency)}</b> even in its worst year of the decade`:` — though its worst year dropped to the <b>${ord(q.consistency)}</b>`}.</p>
       <div class="rlwrap">${chips}</div>
-      <div class="kv"><span class="k">Typical standing (level)</span><span class="v">${q.level}th pctile</span></div>
-      <div class="kv"><span class="k">Worst year (consistency)</span><span class="v">${q.consistency}th pctile</span></div>
-      <div class="kv"><span class="k">Peer group</span><span class="v">${q.peer_group} · ${q.peer_n}</span></div>
-      <div class="kv"><span class="k">Coverage <a class="cite" title="ratios computable / quality dimensions / years in the decade window">?</a></span><span class="v">${q.n_ratios}/9 ratios · ${q.n_dims}/5 dims · ${q.n_years}/10 yrs</span></div></div>`;
+      <div class="kv"><span class="k">Level / consistency</span><span class="v">${q.level}th / ${q.consistency}th</span></div>
+      <div class="kv"><span class="k">Coverage <a class="cite" title="ratios / quality dimensions / years in the decade window">?</a></span><span class="v">${q.n_ratios}/9 · ${q.n_dims}/5 dims · ${q.n_years}/10 yr</span></div>`;
   } else if(q){
-    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>Limited data</h4>
-      <p class="exwhy exna">Not enough fundamentals to rank quality — ${q.n_ratios} of 9 ratios over ${q.n_years} year(s). Peer group: ${q.peer_group}.</p></div>`;
-  } else {
-    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>—</h4><p class="exwhy exna">No quality reading available.</p></div>`;
+    qualHtml=`<div class="subh">Relative quality</div><p class="exwhy exna">Limited data — ${q.n_ratios} of 9 ratios over ${q.n_years} yr.</p>`;
   }
+  const bizHead = (q && q.available)
+    ? {High:'High-quality business',Solid:'Solid business',Mixed:'Middling business',Weak:'Weak business'}[q.tier]
+    : (m7 && m7.available) ? (m7.clears?'Clears the hoarding floor':'Below the hoarding floor') : '—';
+  const bizHtml=`<div class="box"><div class="q">Good business?</div><h4>${bizHead}</h4>${floorHtml}${qualHtml}</div>`;
+
   const summaryHtml = `<div class="readout ${v.cls}">
-    <div class="verdict">${v.label}${v.pending?'<span class="vtag">quality: limited data</span>':''}</div>
+    <div class="verdict">${v.label}${v.hoard==='na'?'<span class="vtag">hoarding floor: unverified</span>':''}</div>
     <p class="vnarr">${s.join(' ')}</p></div>`;
   return `<div class="panel">${summaryHtml}<div class="boxes">
     <div class="chartwrap">
@@ -539,7 +570,7 @@ function detail(r){
       <div class="subh">On price · vs its own history</div>${cheapHtml}
       <div class="subh">On earnings · vs its own history</div>${earnHtml}</div>
     ${bizHtml}
-    <div class="coming">Good business? shows <b>M4 (quality)</b> now; the mispricing test (M5) and the absolute solvency floor (M7) attach here next.</div>
+    <div class="coming">Good business? shows the <b>hoarding floor (M7)</b> and <b>relative quality (M4)</b>; the mispricing test (M5 — did fundamentals actually decline around the dip?) attaches here next.</div>
   </div></div>`;
 }
 
@@ -631,9 +662,12 @@ function render(){
     const cr=r.cr, cheapCell = cr.cell==='priceonly'
       ? `<span class="pill t-na">${m3Tier(m3)}</span><div class="cell-sub">${cheapFig} · earn n/a</div>`
       : `<span class="pill ${CHEAP_PILL[cr.cell].cls}">${CHEAP_PILL[cr.cell].label}</span><div class="cell-sub">earn ${cr.ep}%ile</div>`;
-    const m4=r.m4, bizCell = (m4 && m4.available)
-      ? `<span class="pill ${QUAL_PILL[m4.tier]}">${m4.tier}</span><div class="cell-sub">${m4.level}th pctile</div>`
-      : `<span class="pill t-na">limited data</span><div class="cell-sub">${m4?m4.n_ratios+' of 9 ratios':'—'}</div>`;
+    const m4=r.m4, m7c=r.m7, belowFloor = m7c && m7c.available && !m7c.clears;
+    const bizSub = belowFloor ? '<span class="floorflag">below floor</span>'
+      : (m4 && m4.available ? `${m4.level}th pctile` : (m4 ? m4.n_ratios+' of 9 ratios' : '—'));
+    const bizCell = (m4 && m4.available)
+      ? `<span class="pill ${QUAL_PILL[m4.tier]}">${m4.tier}</span><div class="cell-sub">${bizSub}</div>`
+      : `<span class="pill t-na">limited data</span><div class="cell-sub">${bizSub}</div>`;
     tr.innerHTML=`
       <td class="no"><span class="caret">${state.open===r.ticker?'▾':'▸'}</span>${idx+1}</td>
       <td class="co"><div class="tk">${r.ticker}</div><div class="nm">${r.name}</div></td>

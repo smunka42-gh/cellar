@@ -242,15 +242,44 @@ blanks are recent IPOs, dual-class/partnership structures, and a few filers
 whose recent earnings are not in the data.
 `[calibrate: earnings-cheap percentile cut, derived-value sanity band]`
 
-### 4.7 · M7 — The absolute floor *(Good business?, part 3 — the email gate)* — **proposed**
+### 4.7 · M7 — The hoarding floor *(Good business?, part 3 — the gate)*
 
-The one deliberately **absolute** check amid relative scoring: is the
-company genuinely **profitable, cash-generative, and not over-levered**, on
-hard numbers, not versus peers. Relative quality has one blind spot it
-cannot fix — it can rate a company "high" merely for being the best of a
-weak peer group (the best airline is still an airline). The floor is the
-backstop that keeps "high quality" true in absolute terms, and it is part of
-the **email/default gate**. `[design]`
+**The top-level gate of the whole tool.** M7 asks the one deliberately
+**absolute** question: *is this business worth hoarding at all?* If it fails,
+every other reading — the dip, the recovery record, the cheapness, the
+relative quality — is moot; a fallen, cheap, resilient stock that fails M7 is
+just a cheap way to own a bad business. Relative quality (M4) has one blind
+spot it cannot fix: it can rate a company "high" for being the best of a weak
+peer group (the best airline is still an airline). M7 is the backstop, and the
+email/buy gate.
+
+**Three gates, each a soundness indicator — all pass or the floor fails:**
+1. **Consistently profitable** — net income positive in ≥80% of the last decade.
+2. **Generates operating cash** — operating cash flow positive in ≥80% of years.
+3. **Debt serviceable** — comfortably covers its interest.
+
+**Near-universal, with targeted exceptions where a metric is a category error
+for a business model** (adjusting the metric to fit a model is legitimate;
+lowering the bar for a weak sector is not):
+- The **cash gate is skipped for Financials** — a bank's or insurer's operating
+  cash flow is lending/trading/float (balance-sheet activity, not cash
+  generation), so it false-fails sound banks (JPMorgan, Goldman) even
+  cumulatively.
+- **Solvency is measured as interest coverage** (operating income ÷ interest),
+  because it is **immune to buybacks**. Book equity is unusable: years of
+  buybacks drive equity — and even retained earnings — negative at sound cash
+  machines (AutoZone, Starbucks, Altria, Domino's), indistinguishable from
+  loss-driven distress. For **Financials**, where interest *is* the business
+  (coverage ≈ 2 is normal), solvency is a capital-adequacy floor (equity /
+  assets) instead. A company with no interest burden at all is solvent by
+  definition.
+
+Thresholds are fixed — calibrated once on the whole universe and validated on
+an edge basket (Costco/NVIDIA/JPMorgan/Amazon clear; American Airlines,
+Boeing, Carnival, Ford fail) — and a near-miss is recorded, never a reason to
+move a bar. **71% of the universe clears.** Data (net income, operating cash,
+operating income, interest, equity, assets) is the same coverage-verified
+cache as M4 — no new pull. `[calibrate: the three thresholds]`
 
 ---
 
