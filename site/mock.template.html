@@ -166,6 +166,8 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
 .panel{padding:6px 14px 20px}
 .boxes{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:14px; margin-top:6px}
 .box{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:15px 16px; box-shadow:var(--shadow)}
+.box.floor-clear{border-left:4px solid var(--good)}   /* the hoarding gate: clears */
+.box.floor-below{border-left:4px solid var(--warn)}   /* the hoarding gate: below */
 .box h4{margin:0 0 3px; font-family:"Fraunces",serif; font-weight:600; font-size:15px}
 .box .q{color:var(--faint); font-size:11px; text-transform:uppercase; letter-spacing:.07em; margin-bottom:10px}
 .box p{margin:9px 0 0; font-size:13px; color:var(--ink)}
@@ -517,10 +519,11 @@ function detail(r){
     else if(m7)            s.push(`Its ${hl("hoarding floor can't be confirmed",'warn')} yet — too little history.`);
   }
 
-  // Good business? box: the hoarding floor (M7, the gate) then the relative quality (M4).
-  let floorHtml='';
+  // Two fundamentals cards: "Worth hoarding?" (M7 — the absolute gate) and
+  // "Good business?" (M4 — relative quality vs peers).
+  const gate=(ok,label,val)=>`<div class="kv"><span class="k">${ok?'✓':'✗'} ${label}</span><span class="v">${val}</span></div>`;
+  let hoardHtml;
   if(m7 && m7.available){
-    const gate=(ok,label,val)=>`<div class="kv"><span class="k">${ok?'✓':'✗'} ${label}</span><span class="v">${val}</span></div>`;
     const cashRow = m7.cash_frac===null
       ? `<div class="kv"><span class="k">· operating cash</span><span class="v">n/a · financial</span></div>`
       : gate(m7.cash_ok,'operating cash', Math.round(m7.cash_frac*100)+'% of yrs +');
@@ -529,27 +532,29 @@ function detail(r){
       : m7.solvency_basis==='capital'
         ? gate(m7.solvent_ok,'adequately capitalised', Math.round(m7.equity_assets*100)+'% equity/assets')
         : gate(m7.solvent_ok,'debt serviceable', m7.coverage+'× interest cover');
-    floorHtml=`<div class="subh">Hoarding floor · absolute</div>
-      <p class="exwhy"><b>${m7.clears?'Clears the floor — worth hoarding.':'Below the floor — not worth hoarding.'}</b></p>
-      ${gate(m7.profit_ok,'consistently profitable', Math.round(m7.profit_frac*100)+'% of yrs +')}${cashRow}${solvRow}`;
+    hoardHtml=`<div class="box floor-${m7.clears?'clear':'below'}"><div class="q">Worth hoarding?</div>
+      <h4>${m7.clears?'Clears the hoarding floor':'Below the hoarding floor'}</h4>
+      <p class="exwhy">The absolute gate — sound enough to own at all, regardless of peers. ${m7.clears?'It clears, so the rest of the read counts.':'It fails, so the dip, recovery and cheapness are moot.'}</p>
+      ${gate(m7.profit_ok,'consistently profitable', Math.round(m7.profit_frac*100)+'% of yrs +')}${cashRow}${solvRow}</div>`;
   } else if(m7){
-    floorHtml=`<div class="subh">Hoarding floor · absolute</div><p class="exwhy exna">Can't assess — too little history.</p>`;
+    hoardHtml=`<div class="box"><div class="q">Worth hoarding?</div><h4>Can't assess</h4><p class="exwhy exna">Too little filing history to judge the floor (${m7.n_years||0} yr) — often a recent reorganisation or spin-off.</p></div>`;
+  } else {
+    hoardHtml=`<div class="box"><div class="q">Worth hoarding?</div><h4>—</h4><p class="exwhy exna">No floor reading.</p></div>`;
   }
-  let qualHtml='';
+  let bizHtml;
   if(q && q.available){
+    const bh={High:'High-quality business',Solid:'Solid business',Mixed:'Middling business',Weak:'Weak business'}[q.tier];
     const chips=Object.entries(q.ratio_level).sort((a,b)=>b[1]-a[1]).map(([nm,pc])=>`<span class="rl">${nm} <b>${pc}</b></span>`).join('');
-    qualHtml=`<div class="subh">Relative quality · vs ${q.peer_group} (${q.peer_n})</div>
-      <p class="exwhy">Typically the <b>${ord(q.level)} percentile</b>${q.consistency>=40?`, and <b>${ord(q.consistency)}</b> even in its worst year of the decade`:` — though its worst year dropped to the <b>${ord(q.consistency)}</b>`}.</p>
+    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>${bh}</h4>
+      <p class="exwhy">Against <b>${q.peer_group}</b> peers (${q.peer_n}) it's typically the <b>${ord(q.level)} percentile</b>${q.consistency>=40?`, and <b>${ord(q.consistency)}</b> even in its worst year of the decade`:` — though its worst year dropped to the <b>${ord(q.consistency)}</b>`}.</p>
       <div class="rlwrap">${chips}</div>
       <div class="kv"><span class="k">Level / consistency</span><span class="v">${q.level}th / ${q.consistency}th</span></div>
-      <div class="kv"><span class="k">Coverage <a class="cite" title="ratios / quality dimensions / years in the decade window">?</a></span><span class="v">${q.n_ratios}/9 · ${q.n_dims}/5 dims · ${q.n_years}/10 yr</span></div>`;
+      <div class="kv"><span class="k">Coverage <a class="cite" title="ratios / quality dimensions / years in the decade window">?</a></span><span class="v">${q.n_ratios}/9 · ${q.n_dims}/5 dims · ${q.n_years}/10 yr</span></div></div>`;
   } else if(q){
-    qualHtml=`<div class="subh">Relative quality</div><p class="exwhy exna">Limited data — ${q.n_ratios} of 9 ratios over ${q.n_years} yr.</p>`;
+    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>Limited data</h4><p class="exwhy exna">Not enough fundamentals to rank quality — ${q.n_ratios} of 9 ratios over ${q.n_years} yr. Peer group: ${q.peer_group}.</p></div>`;
+  } else {
+    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>—</h4><p class="exwhy exna">No quality reading.</p></div>`;
   }
-  const bizHead = (q && q.available)
-    ? {High:'High-quality business',Solid:'Solid business',Mixed:'Middling business',Weak:'Weak business'}[q.tier]
-    : (m7 && m7.available) ? (m7.clears?'Clears the hoarding floor':'Below the hoarding floor') : '—';
-  const bizHtml=`<div class="box"><div class="q">Good business?</div><h4>${bizHead}</h4>${floorHtml}${qualHtml}</div>`;
 
   const summaryHtml = `<div class="readout ${v.cls}">
     <div class="verdict">${v.label}${v.hoard==='na'?'<span class="vtag">hoarding floor: unverified</span>':''}</div>
@@ -566,6 +571,7 @@ function detail(r){
         <button class="indb">+ Indicators</button>
       </div>
     </div>
+    ${hoardHtml}
     <div class="box"><div class="q">Fell?</div><h4>Down ${pct(Math.abs(m1.drawdown))} from its ${m1.high_window_years}-year high</h4>
       <p class="exwhy">Its ${m1.high_window_years}-year high was <b>$${m1.high.toFixed(m1.high<20?2:0)}</b> on ${m1.high_date} — ${m1.days_since_high} days ago, ${fresh}. (The dip is measured from the recent high, not an ancient one.)</p>
       <div class="kv"><span class="k">Latest close</span><span class="v">$${m1.last.toFixed(m1.last<20?2:0)}</span></div>
@@ -578,7 +584,7 @@ function detail(r){
       <div class="subh">On price · vs its own history</div>${cheapHtml}
       <div class="subh">On earnings · vs its own history</div>${earnHtml}</div>
     ${bizHtml}
-    <div class="coming">Good business? shows the <b>hoarding floor (M7)</b> and <b>relative quality (M4)</b>; the mispricing test (M5 — did fundamentals actually decline around the dip?) attaches here next.</div>
+    <div class="coming"><b>Worth hoarding?</b> is the absolute floor (M7, the gate); <b>Good business?</b> is relative quality (M4). The mispricing test (M5 — did fundamentals actually decline around the dip?) attaches to Good business? next.</div>
   </div></div>`;
 }
 
