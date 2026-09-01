@@ -19,7 +19,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from cellar import dip  # noqa: E402
+from cellar import dip, value  # noqa: E402
 
 DATA = ROOT / "data"
 
@@ -54,6 +54,7 @@ def main():
                 continue
             m["name"] = r["name"]; m["sector"] = r["sector"]
             m["mcap"] = mcaps.get(r["ticker"])
+            m["m6"] = value.m6(r["ticker"], r["cik"])   # cheap on earnings
             results.append(m)
         except Exception as e:
             fails.append((r["ticker"], f"{type(e).__name__}: {e}"))
@@ -63,6 +64,14 @@ def main():
     print(f"\ncomputed {len(results)} in {time.time()-t0:.0f}s  | failures {len(fails)}")
     for t, why in fails[:10]:
         print(f"    fail {t}: {why}")
+
+    # ---- M6 availability (surfaces reorg-filer / dual-class / thin-history gaps) ----
+    from collections import Counter
+    m6ok = sum(1 for x in results if x.get("m6", {}).get("available"))
+    reasons = Counter(x["m6"].get("reason") for x in results if not x.get("m6", {}).get("available"))
+    print(f"\nM6 (cheap on earnings): available {m6ok}/{len(results)}  | NA reasons: {dict(reasons)}")
+    thin = [x["ticker"] for x in results if x.get("m6", {}).get("reason") == "thin_history"]
+    print(f"  thin/NA sample: {thin[:25]}")
 
     # ---- calibration distributions ----
     def q(xs, ps=(10, 25, 50, 75, 90)):

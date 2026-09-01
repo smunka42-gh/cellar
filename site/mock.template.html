@@ -93,17 +93,19 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 .note{color:var(--faint); font-size:12.5px; margin-left:auto; max-width:40ch; text-align:right}
 
 /* table */
-.tbl{width:100%; border-collapse:collapse; margin-top:8px}
+.tbl{width:100%; border-collapse:collapse; margin-top:8px; table-layout:fixed}
 .tbl thead th{position:sticky; top:64px; background:var(--paper); z-index:3;
-  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.08em;
-  color:var(--faint); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--line); cursor:pointer; white-space:nowrap}
+  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.08em; line-height:1.25;
+  color:var(--faint); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--line); cursor:pointer;
+  vertical-align:bottom}   /* headers may wrap to two lines; align on the baseline */
 .tbl thead th.num{text-align:right}
 .tbl thead th:hover{color:var(--ink)}
 .tbl tbody tr.row{border-bottom:1px solid var(--line); cursor:pointer}
 .tbl tbody tr.row:hover{background:var(--raised)}
 .tbl td{padding:11px 12px; vertical-align:middle}
 .co .tk{font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:14px}
-.co .nm{color:var(--muted); font-size:12.5px; margin-top:1px; max-width:26ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.co .nm{color:var(--muted); font-size:12.5px; margin-top:1px; line-height:1.3;
+  overflow-wrap:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
 .sec{color:var(--faint); font-size:12px}
 .cell-fig{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink)}
 .cell-sub{color:var(--faint); font-size:11.5px; font-family:"IBM Plex Mono",monospace}
@@ -115,6 +117,7 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 .t-good{background:var(--good-bg); color:var(--good)}
 .t-warn{background:var(--warn-bg); color:var(--warn)}
 .t-weak{background:var(--weak-bg); color:var(--weak)}
+.t-na{background:transparent; color:var(--muted); border:1px dashed var(--line)}   /* earnings unknown */
 .exp{color:var(--faint); font-family:"IBM Plex Mono",monospace; font-size:15px; width:20px; text-align:center}
 tr.row[aria-expanded="true"] .exp{color:var(--accent)}
 
@@ -131,15 +134,17 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
 .kv:first-of-type{border-top:none}
 .kv .k{color:var(--muted)} .kv .v{font-family:"IBM Plex Mono",monospace; color:var(--ink)}
 .cite{color:var(--accent); font-size:11px; text-decoration:none; border-bottom:1px dotted var(--accent)}
+.subh{font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--faint); font-weight:600; margin:15px 0 4px}
+.exna{color:var(--faint); font-style:italic}
 .minibar{display:flex; gap:2px; align-items:flex-end; height:34px; margin-top:8px}
 .minibar i{flex:1; background:var(--accent-soft); border-radius:1px 1px 0 0; min-height:2px}
 .coming{grid-column:1/-1; border:1px dashed var(--line); border-radius:10px; padding:12px 15px;
   color:var(--muted); font-size:12.5px; background:transparent}
 .coming b{color:var(--ink)}
-.links{white-space:nowrap}
+.links{display:flex; flex-direction:column; gap:4px; align-items:flex-start}   /* Yahoo above Google */
 .links a{display:inline-block; width:25px; height:22px; line-height:21px; text-align:center;
   border:1px solid var(--line); border-radius:6px; color:var(--muted); text-decoration:none;
-  font-family:"IBM Plex Mono",monospace; font-size:11px; margin-right:4px}
+  font-family:"IBM Plex Mono",monospace; font-size:11px}
 .links a:hover{border-color:var(--accent); color:var(--accent)}
 .chartwrap{grid-column:1/-1; background:var(--surface); border:1px solid var(--line);
   border-radius:10px; padding:12px 14px 10px; box-shadow:var(--shadow); margin-bottom:2px}
@@ -183,7 +188,7 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
       <div class="fgroup"><span class="flabel">Comes back?</span><div class="chips" data-dim="comeback">
         <button class="chip" data-v="Strong">Strong</button><button class="chip" data-v="Past">Past floor</button><button class="chip" data-v="None">None</button></div></div>
       <div class="fgroup"><span class="flabel">Cheap?</span><div class="chips" data-dim="cheap">
-        <button class="chip" data-v="Cheap">Cheap</button><button class="chip" data-v="Fair">Fair</button><button class="chip" data-v="Full">Full price</button></div></div>
+        <button class="chip" data-v="Both">Both</button><button class="chip" data-v="Growing in">Growing in</button><button class="chip" data-v="Trap risk">Trap risk</button><button class="chip" data-v="Full">Full</button></div></div>
       <div class="fgroup"><span class="flabel">Size</span><div class="chips" data-dim="cap">
         <button class="chip" data-v="Mega">Mega</button><button class="chip" data-v="Large">Large</button><button class="chip" data-v="Mid">Mid</button><button class="chip" data-v="Small">Small</button></div></div>
     </div>
@@ -204,10 +209,17 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
     <div class="stat"><div class="n" id="s-total">—</div><div class="l">SEC-filing companies</div></div>
     <div class="stat"><div class="n"><em id="s-buy">—</em></div><div class="l">in today's buy view</div></div>
     <div class="stat"><div class="n" id="s-shown">—</div><div class="l">shown</div></div>
-    <div class="note">Price-only preset: a meaningful dip, sitting inside the depth it reliably recovers from, at a fair-or-better price. The real buy gate adds “Good business?”.</div>
+    <div class="note">Price-engine preset: a meaningful dip, sitting inside the depth it reliably recovers from, and cheap either on price or on earnings (not a value-trap). The real buy gate adds “Good business?”.</div>
   </div>
 
   <table class="tbl">
+    <colgroup>
+      <col style="width:15%"><!-- Company    --><col style="width:12%"><!-- Sector    -->
+      <col style="width:8%" ><!-- Market cap --><col style="width:13%"><!-- Fell?     -->
+      <col style="width:14%"><!-- Comes back --><col style="width:16%"><!-- Cheap?    -->
+      <col style="width:11%"><!-- Good biz   --><col style="width:7%" ><!-- Links     -->
+      <col style="width:4%" ><!-- expand     -->
+    </colgroup>
     <thead><tr>
       <th data-sort="ticker">Company</th>
       <th>Sector</th>
@@ -257,9 +269,50 @@ function tiers(r){
 const cls = {Big:'t-warn',Some:'t-warn',Minimal:'t-weak',
   Strong:'t-good',Past:'t-warn',None:'t-weak',
   Cheap:'t-good',Fair:'t-warn',Full:'t-weak'};
-RAW.forEach(r=>{ r.t=tiers(r);
-  r.cheapScore = r.m3.mode==='trend' ? -r.m3.vs_usual : r.m3.room_10;  // higher = cheaper, across modes
-  r.isbuy=(r.t.fell!=='Minimal')&&(r.t.comeback==='Strong')&&(r.t.cheap!=='Full'); });
+
+// Cheap? = M3 (price) × M6 (earnings), per spec §5. The two never merge into one
+// number; their agreement/disagreement is the signal. This classifies the 2×2 cell.
+const E_CHEAP=60;   // today's earnings yield at/above this pctile of its own history = cheap on earnings
+function cheapRead(r){
+  const m3=r.m3, m6=r.m6;
+  const priceCheap = (m3.mode==='trend') ? m3.vs_usual<=-0.12 : m3.room_10>=0.5;
+  const eAvail = !!(m6 && m6.available);
+  const ep = eAvail ? m6.cheap_pctile_full : null;
+  const eCheap = eAvail ? ep>=E_CHEAP : null;
+  let cell;
+  if(!eAvail) cell='priceonly';
+  else if(priceCheap && eCheap) cell='both';
+  else if(!priceCheap && eCheap) cell='growing';
+  else if(priceCheap && !eCheap) cell='trap';
+  else cell='full';
+  return {priceCheap, eAvail, ep, er: eAvail?m6.cheap_pctile_recent:null, eCheap, cell};
+}
+// How each 2×2 cell reads in the scannable row (and as a filter value).
+const CHEAP_PILL = {
+  both:    {label:'Both',       cls:'t-good'},   // cheap on price AND earnings
+  growing: {label:'Growing in', cls:'t-good'},   // dear on price, cheap on earnings
+  trap:    {label:'Trap risk',  cls:'t-warn'},   // cheap on price, dear on earnings
+  full:    {label:'Full',       cls:'t-weak'},   // dear both ways
+};
+const m3Tier = m3 => m3.mode==='trend'
+  ? (m3.vs_usual<=-0.12?'Cheap': m3.vs_usual<=-0.03?'Fair':'Full')
+  : (m3.room_10>=0.5?'Cheap': m3.room_10>=0.2?'Fair':'Full');
+
+RAW.forEach(r=>{
+  r.t=tiers(r);
+  const cr=cheapRead(r); r.cr=cr;
+  r.t.cheap = cr.cell==='priceonly' ? 'priceonly' : CHEAP_PILL[cr.cell].label;
+  // Combined cheapness for the "cheapest" sort — higher = better buy. Rank by
+  // cell (both > growing > trap > full), then by earnings-yield percentile;
+  // price-only names, whose earnings we can't read, land in [1,2] on price alone.
+  const priceFrac = Math.max(0, Math.min(1, r.m3.mode==='trend' ? -r.m3.vs_usual/0.30 : r.m3.room_10));
+  const base = {both:4, growing:3, trap:2, full:1}[cr.cell];
+  r.cheapScore = cr.eAvail ? base + cr.ep/100 : 1 + priceFrac;
+  // Buy view (price-engine preview; the real gate is M4–M7): attractively
+  // priced = cheap both ways or growing into its price; a value-trap is not.
+  r.isbuy = (r.t.fell!=='Minimal') && (r.t.comeback==='Strong') &&
+    (cr.cell==='both' || cr.cell==='growing' || (cr.cell==='priceonly' && m3Tier(r.m3)!=='Full'));
+});
 
 const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),cap:new Set()},q:'',def:true,sort:'fell',dir:1,open:null};
 
@@ -316,6 +369,28 @@ function detail(r){
       <b>${pct(m3.room_20)}</b> of the time — ${m3.room_10>=0.5?'plenty of room to recover into':m3.room_10>=0.2?'some room above':'near the top of its 3-year range'}.</p>
       <div class="kv"><span class="k">Trend fit (R²)</span><span class="v">${m3.r2.toFixed(2)} (low)</span></div>`;
   }
+  // Earnings side (M6) and the price×earnings synthesis.
+  const cr=cheapRead(r), m6=r.m6;
+  const naWord={ thin_history:'too little earnings history to rank against',
+    series_short:'too little overlapping price history for the earnings window',
+    stale_earnings:'its most recent earnings filings are missing from our data',
+    derived_implausible:'its share structure makes a clean per-share reading unreliable' };
+  let earnHtml;
+  if(cr.eAvail){
+    const lossy=m6.negative_earnings, read = lossy?'currently lossmaking': cr.ep>=67?'cheaper than usual': cr.ep>=40?'about typical':'richer than usual';
+    earnHtml=`<p class="exwhy">At today's price it trades at ${lossy?'<b>negative</b> earnings':'a P/E of <b>'+(m6.pe!=null?m6.pe:'—')+'</b> on <b>$'+m6.eps.toFixed(2)+'</b> a share'} —
+      <b>${read}</b>: today's earnings yield beats <b>${cr.ep}%</b> of its own history (<b>${cr.er}%</b> over the last 5 years).</p>
+      <div class="kv"><span class="k">P/E (current)</span><span class="v">${m6.pe!=null?m6.pe:'—'}</span></div>
+      <div class="kv"><span class="k">Cheaper than own history</span><span class="v">${cr.ep}% all · ${cr.er}% 5y</span></div>`;
+  } else {
+    earnHtml=`<p class="exwhy exna">No reliable earnings reading — ${naWord[m6&&m6.reason]||'not available for this company'}.</p>`;
+  }
+  const cheapHead = !cr.eAvail
+    ? (m3.mode==='trend'?signpct(m3.vs_usual)+' vs its usual price':pct(m3.room_10)+' room above')
+    : cr.cell==='both'?'Cheap on price & earnings'
+    : cr.cell==='growing'?'Growing into its price'
+    : cr.cell==='trap'?'Cheap on price, dearer on earnings'
+    : 'Fully priced';
   return `<div class="panel"><div class="boxes">
     <div class="chartwrap">
       <div class="charthead">
@@ -336,7 +411,9 @@ function detail(r){
       <div class="kv"><span class="k">Market cap</span><span class="v">${fmtCap(r.mcap)}</span></div>
       <div class="kv"><span class="k">History</span><span class="v">${r.history_years} yrs${r.thin_history?' · thin':''}</span></div></div>
     <div class="box"><div class="q">Comes back?</div><h4>${rel?'Reliable to '+pct(rel.depth):'No reliable floor'}</h4>${comeHtml}</div>
-    <div class="box"><div class="q">Cheap?</div><h4>${m3.mode==='trend'?signpct(m3.vs_usual)+' vs its usual price':pct(m3.room_10)+' room above'}</h4>${cheapHtml}</div>
+    <div class="box"><div class="q">Cheap?</div><h4>${cheapHead}</h4>
+      <div class="subh">On price · vs its own history</div>${cheapHtml}
+      <div class="subh">On earnings · vs its own history</div>${earnHtml}</div>
     <div class="coming">Good business? — <b>quality, fundamentals-intact, and the solvency floor (M4–M7)</b> attach here next,
       and become the actual buy gate. Every number above will link to its full working.</div>
   </div></div>`;
@@ -427,13 +504,16 @@ function render(){
     tr.setAttribute('aria-expanded', state.open===r.ticker?'true':'false');
     const m1=r.m1,m3=r.m3,rel=r.m2.reliable;
     const cheapFig = m3.mode==='trend'? signpct(m3.vs_usual)+' vs usual' : pct(m3.room_10)+' room';
+    const cr=r.cr, cheapCell = cr.cell==='priceonly'
+      ? `<span class="pill t-na">${m3Tier(m3)}</span><div class="cell-sub">${cheapFig} · earn n/a</div>`
+      : `<span class="pill ${CHEAP_PILL[cr.cell].cls}">${CHEAP_PILL[cr.cell].label}</span><div class="cell-sub">earn ${cr.ep}%ile</div>`;
     tr.innerHTML=`
       <td class="co"><div class="tk">${r.ticker}</div><div class="nm">${r.name}</div></td>
       <td class="sec">${r.sector}</td>
       <td class="num cell-fig">${fmtCap(r.mcap)}</td>
       <td><span class="pill ${cls[r.t.fell]}">${r.t.fell}</span><div class="cell-sub">${signpct(m1.drawdown)} · ${m1.days_since_high}d</div></td>
       <td><span class="pill ${cls[r.t.comeback]}">${r.t.comeback}</span><div class="cell-sub">${rel?'to '+pct(rel.depth)+' · '+mo(rel.median_recovery_days)+'mo':'—'}</div></td>
-      <td><span class="pill ${cls[r.t.cheap]}">${r.t.cheap}</span><div class="cell-sub">${cheapFig}</div></td>
+      <td>${cheapCell}</td>
       <td><span class="cell-sub">— M4–M7</span></td>
       <td class="links">
         <a href="https://finance.yahoo.com/quote/${r.ticker}" target="_blank" rel="noopener" title="Yahoo Finance" onclick="event.stopPropagation()">Y!</a>

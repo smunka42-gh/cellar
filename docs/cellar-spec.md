@@ -176,12 +176,41 @@ filing lands, so this is answered around a 10-Q/10-K:
 
 Uses the filing dates carried in `companyfacts`. `[design]`
 
-### 4.6 · M6 — Cheap on earnings *(Cheap?, part 2)* — **proposed**
+### 4.6 · M6 — Cheap on earnings *(Cheap?, part 2)*
 
-Today's price/earnings ratio ranked against the company's **own** P/E
-history, both recent and long. TTM earnings, with Q4 derived as annual minus
-Q1–Q3. This is the earnings-side companion to M3's price-side reading; §5
-sets out how the two combine. `[design]`
+Today's **earnings yield** — annual earnings ÷ today's price — ranked against
+the company's **own** yield history, both long and recent (5-year). A high
+rank means today's price buys more earnings than it usually has: cheap on
+earnings. It is the earnings-side companion to M3's price-side reading; §5
+sets out how the two combine.
+
+**Why yield, not the P/E ratio.** A P/E explodes toward infinity as earnings
+approach zero and turns meaningless when they go negative, so a P/E history
+is full of holes and spikes. Its reciprocal, the yield, stays finite: a loss
+is simply a negative yield that ranks cleanly at the bottom. The series has
+no gaps to paper over. **And current earnings, not a multi-year average** —
+ranking today's yield against the stock's own past yields is self-consistent
+(each past point used its own then-current earnings), so a company that grew
+its profits is not penalised the way a lagging average would penalise it.
+
+**Getting the earnings right was most of the work.** Earnings are annual
+(whole-year 10-K figures), split-adjusted by **filing date** to line up with
+the split-adjusted prices — a 10-K filed after a split already reports
+post-split per-share numbers, so adjusting by the reporting period would
+double-count. Three subtleties, each a silent-wrong-number trap if missed:
+the fiscal year is read from the reporting period's **end date**, not the
+filing's own year tag (one 10-K carries three comparative years under that
+one tag); the diluted-EPS **concept is chosen per company by whichever is
+freshest**, because filers migrate between concepts mid-history and reading
+only the first leaves the series years stale; and where a filer reports no
+per-share figure at all, earnings are **derived from net income ÷ diluted
+shares** — the definition the company itself uses — guarded by a share-count
+scale check, a valuation-sanity gate, and a staleness cutoff, so a name we
+cannot read cleanly (dual-class, partnership, reorganised filer) shows an
+honest blank rather than a wrong number. Coverage: **1,354 of 1,394**; the
+blanks are recent IPOs, dual-class/partnership structures, and a few filers
+whose recent earnings are not in the data.
+`[calibrate: earnings-cheap percentile cut, derived-value sanity band]`
 
 ### 4.7 · M7 — The absolute floor *(Good business?, part 3 — the email gate)* — **proposed**
 
@@ -202,7 +231,7 @@ answer different questions and **coexist — they are never merged into one
 "cheap" number.** M3 knows only price; M6 knows profits. Their **agreement
 or disagreement is the signal:**
 
-| | **Cheap on earnings** (low P/E vs. own history) | **Not cheap on earnings** |
+| | **Cheap on earnings** (high yield vs. own history) | **Not cheap on earnings** |
 |---|---|---|
 | **Price below its usual** (M3 cheap) | cheap both ways — **strongest** | price fell but earnings fell *more* → **value-trap risk** |
 | **Price at/above usual** (M3 not cheap) | **"growing into its price"** — flat price, rising profits: a discount M3 alone would miss | **fully priced** |
@@ -220,7 +249,7 @@ Every reading is also shown **relative to peers**, because a number means
 little in isolation: a 15% drop while the sector fell 3% is company-specific;
 the same drop in a −20% sector is macro. The sector overlay applies to the
 dip (M1), quality (M4, already peer-relative), the recovery record (M2, vs.
-peer recovery), and valuation (M6, vs. peer P/E). It is a comparison lens,
+peer recovery), and valuation (M6, vs. peer earnings yield). It is a comparison lens,
 not a separate measurement.
 
 ---
@@ -243,7 +272,8 @@ so on. Nothing shown is un-auditable.
 
 - **Header** — `Daily Analysis: S&P 1500*` · asterisk: excludes REITs.
 - **Filters** — **tiers** for each question (e.g. Fell: Big/Some/Any;
-  Comes-back: Strong/Some/Any; Cheap: Cheap/Fair/Any; Business: High/Med/Low),
+  Comes-back: Strong/Some/Any; Cheap: Both/Growing-in/Trap-risk/Full — the
+  M3×M6 cells of §5; Business: High/Med/Low),
   a **Size** tier filter (Mega ≥ $200B / Large / Mid / Small < $2B), and a
   category filter for fundamentals status. A power-user slider may hide
   behind an "advanced" toggle.
