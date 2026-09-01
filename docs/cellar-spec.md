@@ -43,15 +43,18 @@ every day:
 A fifth, cross-cutting lens sits over all four: **how does this compare to
 its sector peers?** (the sector overlay).
 
-**The buy case.** A name is a buy when it *fell* (M1), it *reliably comes
-back* from a dip this deep (M2), and the *business is sound* (M4/M5/M7) —
-with *cheap* (M3/M6) telling the buyer how good the entry price is. Quality
-is the foundation: Cellar only deals in strong businesses.
+**The buy case, and the gate.** **M7 (the hoarding floor) is the top-level
+gate** — *is this worth owning at all?* If it fails, the dip, the recovery
+record and the cheapness are moot. Once it clears, a name is a buy when it
+*fell* (M1), *reliably comes back* from a dip this deep (M2), is *cheap*
+(M3/M6), and is *high relative quality* (M4) — with M5 (the mispricing test)
+telling the buyer whether the fall was backed by real deterioration. Every
+row carries a deterministic **verdict**, led by the hoarding gate.
 
 **Site vs. email.**
 - The **site** shows every company with all four answers and **tier filters**
-  (not raw sliders — a first-time user can't anchor a slider). A
-  **"reset to default"** button restores the buy preset.
+  (not raw sliders — a first-time user can't anchor a slider), and a
+  **Buy list ⇄ All** toggle (the buy preset, or the whole universe).
 - The **email** is exactly the **site's default filter view** — the buy
   preset. One definition serves both, so the email criteria and the site
   filters can never drift apart. Email fires only when that view is
@@ -316,30 +319,35 @@ not a separate measurement.
 ## 7 · Row output and the detailed panel
 
 **Collapsed row** — scannable: the four plain-language answers plus their
-tiers, market cap, and links (Yahoo, Google Finance).
+tiers, market cap, and links (Yahoo, Google Finance). Below-floor names carry
+a "below floor" flag.
 
-**Expanded panel** — full transparency. A **collapsible box per
-measurement** (M1–M7), each opening to the **real workings**: the multi-year
-actual values, how the number was derived, and a plain-English explanation.
-**Every headline number cites its working** — clickable through to the
-episodes behind "recovered 14 times," the fit behind "usual price $108," and
-so on. Nothing shown is un-auditable.
+**Expanded panel** — opens with a **colour-coded verdict readout**: the
+deterministic call ("A dip worth hoarding" / "Not worth hoarding" / …) led by
+the hoarding gate, then a woven, evidence-highlighted narrative — every clause
+pinned to a computed value. Below it, the chart and a **card per reading**:
+**Worth hoarding?** (M7, the gate, led first with a clears/below accent),
+Fell?, Comes back?, Cheap? (price × earnings side by side), and Good business?
+(M4 relative quality). Each opens the **real workings** — the multi-year
+values, how the number was derived, plain English — and **every headline
+number cites its working**. Nothing shown is un-auditable.
 
 ---
 
 ## 8 · Site
 
 - **Header** — `Daily Analysis: S&P 1500*` · asterisk: excludes REITs.
-- **Filters** — **tiers** for each question (e.g. Fell: Big/Some/Any;
-  Comes-back: Strong/Some/Any; Cheap: Both/Growing-in/Trap-risk/Full — the
-  M3×M6 cells of §5; Business: High/Med/Low),
-  a **Size** tier filter (Mega ≥ $200B / Large / Mid / Small < $2B), and a
-  category filter for fundamentals status. A power-user slider may hide
-  behind an "advanced" toggle.
-- **Sort** — a control to order the list (biggest dip, deepest reliable
-  recovery, cheapest, ticker); column headers also sort.
-- **Default view** = the buy preset (fell + reliably recovers + business
-  sound). A **reset button** restores it.
+- **Filters** — **tiers** for each question: Fell (Big/Some/Minimal);
+  Comes-back (Strong/Past/None); Cheap (Both/Growing-in/Trap-risk/Full — the
+  M3×M6 cells of §5); Good business (High/Solid/Mixed/Weak — M4 quality); a
+  **Hoarding floor** filter (Clears/Below — M7); and a **Size** tier
+  (Mega ≥ $200B / Large / Mid / Small < $2B).
+- **Sort** — order the list (biggest dip, deepest reliable recovery, cheapest,
+  best business, market cap); column headers also sort.
+- **Buy list ⇄ All toggle.** The default is the **buy preset** (worth
+  hoarding + fell + reliably recovers + cheap + high quality). Switching to
+  **All**, or touching any filter or search, queries the whole ~1,394; the
+  toggle back to **Buy list** restores the preset and clears filters.
 
 ---
 

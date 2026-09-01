@@ -17,13 +17,20 @@ principles are in [`docs/TENETS.md`](docs/TENETS.md).
 
 ## Status
 
-- **Price engine (Fell? / Comes back? / Cheap?)** — built and validated on
-  full price history for all ~1,394 companies. Computed from a local cache
-  in seconds.
-- **Good business? (quality, fundamentals, solvency floor)** — designed, not
-  yet built. This is the next piece.
+- **The four questions — built and validated** on all ~1,394 companies,
+  computed from the local cache in ~2 minutes:
+  - **Fell? / Comes back? / Cheap?** (M1–M3, M6) — the price engine, on full
+    price history.
+  - **Good business?** — the **hoarding floor** (M7, the absolute
+    profitable/cash-generative/solvent gate — *is it worth owning at all?*)
+    and **relative quality** (M4, nine fundamental ratios ranked against GICS
+    sub-industry peers over the last decade).
+  - The remaining piece is the **mispricing test** (M5 — did fundamentals
+    actually decline around the dip?), in progress.
+- Each row carries a deterministic **verdict**, led by the hoarding gate and
+  woven from the four answers — every clause pinned to a computed number.
 - **Site and email** — a working interface mock exists; the live daily site
-  and the email are not yet built.
+  and the email are deferred until the measures are complete and evaluated.
 
 ## How it runs
 
@@ -33,8 +40,11 @@ Everything follows one rule: **pull raw data once, compute from the cache.**
 # 1. pull the raw data once (prices + SEC filings + market cap) into data/
 SEC_USER_AGENT="cellar <you@example.com>" python scripts/pull.py all
 
-# 2. compute the price-engine scores for the whole universe (seconds)
+# 2. compute all measures (M1-M7 + quality) for the whole universe (~2 min)
 python scripts/run_dip.py            # -> data/results_dip.json
+
+# 3. build the interface mock from those results
+python scripts/build_mock.py         # -> data/mock.html
 ```
 
 `SEC_USER_AGENT` is read from the environment (SEC requires a contact
@@ -43,8 +53,9 @@ address on every request); it is never hard-coded.
 ## Layout
 
 ```
-cellar/      library — pure functions (universe, dip measures, split repair)
-scripts/     pull.py (fetch + cache), run_dip.py (compute the price engine)
+cellar/      library — pure functions (universe, dip measures M1-M3, facts +
+             fundamentals M4/M6/M7, split repair)
+scripts/     pull.py (fetch + cache), run_dip.py (compute M1-M7), build_mock.py
 site/        the interface (mock template)
 docs/        cellar-spec.md (design), TENETS.md (principles)
 tests/       validation
