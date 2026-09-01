@@ -1,0 +1,107 @@
+name: Daily refresh
+
+# Rebuilds the site from fresh data each weekday evening (after the US close) and
+# redeploys it to GitHub Pages. Also runnable on demand from the Actions tab.
+#
+# Data strategy: a rolling cache holds the heavy, slow-changing inputs (the 4.4 GB
+# SEC facts cache and full price history). Each run restores the latest cache, then
+# does cheap INCREMENTAL updates — append today's closes (batched), refresh facts
+# only for companies that filed recently — rather than re-pulling everything. The
+# first run (empty cache) does a one-time full "prime" pull. A sanity guard blocks
+# deploying a degraded build, so a bad pull never overwrites the live site.
+
+on:
+  schedule:
+    - cron: '30 22 * * 1-5'      # 22:30 UTC, Mon-Fri (~after the 4pm ET close)
+  workflow_dispatch:
+
+permissions:
+  contents: write                 # to force-push the gh-pages branch
+
+concurrency:
+  group: cellar-refresh
+  cancel-in-progress: false
+
+env:
+  SEC_USER_AGENT: "cellar-screener research (EDGAR daily refresh)"
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Restore data cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            data/universe.json
+            data/prices
+            data/splits
+            data/facts
+            data/market_cap.json
+          key: cellar-data-${{ github.run_id }}
+          restore-keys: |
+            cellar-data-
+
+      - name: Prime (first run) or incrementally refresh prices
+        run: |
+          if [ ! -d data/facts ] || [ "$(ls data/facts 2>/dev/null | wc -l)" -lt 100 ]; then
+            echo "::notice::facts cache empty — full prime pull (one-time, slow)"
+            python scripts/pull.py all
+          else
+            echo "::notice::cache present — incremental price refresh"
+            python scripts/refresh_prices.py
+          fi
+
+      - name: Pull recent SEC filings
+        run: python scripts/pull_filings.py
+
+      - name: Refresh fundamentals for recent filers
+        run: python scripts/refresh_facts.py
+
+      - name: Compute measures (M1-M7)
+        run: python scripts/run_dip.py
+
+      - name: Build the site
+        run: python scripts/build_mock.py
+
+      - name: Sanity guard — refuse to deploy a degraded build
+        run: |
+          n=$(python -c "import json;print(len(json.load(open('data/results_dip.json'))))")
+          echo "companies computed: $n"
+          if [ "$n" -lt 1300 ]; then
+            echo "::error::only $n companies — pull looks degraded, aborting deploy (live site unchanged)"
+            exit 1
+          fi
+
+      - name: Deploy to GitHub Pages (gh-pages branch)
+        run: |
+          mkdir -p /tmp/site && cp data/mock.html /tmp/site/index.html
+          cd /tmp/site
+          git init -q -b gh-pages
+          git config user.name  "smunka42-gh"
+          git config user.email "295261357+smunka42-gh@users.noreply.github.com"
+          git add index.html
+          git commit -q -m "Deploy $(date -u +%Y-%m-%d)"
+          git push -f -q "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+
+      - name: Save data cache
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/universe.json
+            data/prices
+            data/splits
+            data/facts
+            data/market_cap.json
+          key: cellar-data-${{ github.run_id }}
