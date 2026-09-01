@@ -38,6 +38,53 @@ def load_facts(cik) -> dict | None:
         return None
 
 
+def annual_concept(gaap: dict | None, tags: list[str], instant: bool = False) -> dict[int, float]:
+    """{fiscal_year: value} for one accounting concept, over its full 10-K history.
+
+    `tags` is the concept's fallback chain — the aliases it may be reported
+    under (companies migrate between them across years, e.g. revenue moved from
+    `Revenues` to `RevenueFromContractWithCustomer…` under ASC 606). Earlier
+    tags in the chain are preferred; a later one only fills a year the earlier
+    ones don't cover. Within a tag, the earliest-filed (original) figure wins.
+
+    `instant=False` (flow items — revenue, income, cash flows) keeps only
+    whole-year periods (350–380 days). `instant=True` (balance-sheet items —
+    assets, equity, debt) keeps the point-in-time value at fiscal-year-end.
+    Year is taken from the period's end date, not the filing's `fy` tag.
+    """
+    if not gaap:
+        return {}
+    out: dict[int, float] = {}
+    for tag in tags:                                   # chain order = preference
+        node = gaap.get(tag)
+        if not node:
+            continue
+        rows = []
+        for arr in node.get("units", {}).values():
+            for e in arr:
+                if not e.get("form", "").startswith("10-K"):
+                    continue
+                if e.get("val") is None or e.get("filed") is None:
+                    continue
+                try:
+                    end = _date(e["end"])
+                except Exception:
+                    continue
+                if instant:
+                    # a true instant has no start; tolerate a 0-length period
+                    if e.get("start") and (end - _date(e["start"])).days > 5:
+                        continue
+                else:
+                    if not e.get("start"):
+                        continue
+                    if not (350 <= (end - _date(e["start"])).days <= 380):
+                        continue
+                rows.append((_date(e["filed"]), end.year, float(e["val"])))
+        for filed, yr, val in sorted(rows):
+            out.setdefault(yr, val)                    # earliest filing wins per year
+    return out
+
+
 def load_splits(ticker: str) -> list[tuple[_dt.date, float]]:
     """(date, factor) split events for a ticker, or [] if none."""
     p = SPLITS / f"{ticker}.csv"

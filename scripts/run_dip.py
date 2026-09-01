@@ -19,7 +19,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
-from cellar import dip, value  # noqa: E402
+from cellar import dip, value, quality  # noqa: E402
 
 DATA = ROOT / "data"
 
@@ -60,6 +60,13 @@ def main():
             fails.append((r["ticker"], f"{type(e).__name__}: {e}"))
         if i % 200 == 0:
             print(f"  {i}/{len(rows)} computed ({time.time()-t0:.0f}s)")
+    # ---- M4 quality (cross-sectional: percentiles need every company's peers) ----
+    tq = time.time()
+    m4 = quality.all_quality(rows)
+    for m in results:
+        m["m4"] = m4.get(m["ticker"])
+    print(f"\nM4 quality computed for {len(m4)} in {time.time()-tq:.0f}s")
+
     (DATA / "results_dip.json").write_text(json.dumps(results))
     print(f"\ncomputed {len(results)} in {time.time()-t0:.0f}s  | failures {len(fails)}")
     for t, why in fails[:10]:

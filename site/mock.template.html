@@ -172,6 +172,10 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
 .cite{color:var(--accent); font-size:11px; text-decoration:none; border-bottom:1px dotted var(--accent)}
 .subh{font-size:10px; text-transform:uppercase; letter-spacing:.07em; color:var(--faint); font-weight:600; margin:15px 0 4px}
 .exna{color:var(--faint); font-style:italic}
+.rlwrap{display:flex; flex-wrap:wrap; gap:5px; margin:10px 0 6px}
+.rl{font-size:10.5px; color:var(--muted); background:var(--raised); border:1px solid var(--line);
+  border-radius:6px; padding:2px 7px; font-family:"IBM Plex Mono",monospace; white-space:nowrap}
+.rl b{color:var(--ink); font-weight:600}
 .minibar{display:flex; gap:2px; align-items:flex-end; height:34px; margin-top:8px}
 .minibar i{flex:1; background:var(--accent-soft); border-radius:1px 1px 0 0; min-height:2px}
 .coming{grid-column:1/-1; border:1px dashed var(--line); border-radius:10px; padding:12px 15px;
@@ -211,10 +215,10 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
       <div class="tag">Buy the dip — but only in companies that reliably climb back.</div>
       <div class="asof">Snapshot · __ASOF__</div>
     </div>
-    <p class="lede">Every company, every day, answered in plain questions.
-      This mock covers the <b>price engine</b> — <b>Fell?</b>, <b>Comes back?</b>, <b>Cheap?</b> —
-      computed on full price history for all 1,394 names. <b>Good business?</b> (quality, fundamentals,
-      the buy-gate) arrives with M4–M7. Click any row for the real workings.</p>
+    <p class="lede">Every company, every day, answered in plain questions —
+      <b>Fell?</b>, <b>Comes back?</b>, <b>Cheap?</b>, and now <b>Good business?</b>
+      (quality, ranked against sector peers over the last decade). The mispricing
+      test and the absolute solvency floor attach next. Click any row for the real workings.</p>
   </header>
 
   <div class="toolbar">
@@ -225,6 +229,8 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
         <button class="chip" data-v="Strong">Strong</button><button class="chip" data-v="Past">Past floor</button><button class="chip" data-v="None">None</button></div></div>
       <div class="fgroup"><span class="flabel">Cheap?</span><div class="chips" data-dim="cheap">
         <button class="chip" data-v="Both">Both</button><button class="chip" data-v="Growing in">Growing in</button><button class="chip" data-v="Trap risk">Trap risk</button><button class="chip" data-v="Full">Full</button></div></div>
+      <div class="fgroup"><span class="flabel">Good business?</span><div class="chips" data-dim="business">
+        <button class="chip" data-v="High">High</button><button class="chip" data-v="Solid">Solid</button><button class="chip" data-v="Mixed">Mixed</button><button class="chip" data-v="Weak">Weak</button></div></div>
       <div class="fgroup"><span class="flabel">Size</span><div class="chips" data-dim="cap">
         <button class="chip" data-v="Mega">Mega</button><button class="chip" data-v="Large">Large</button><button class="chip" data-v="Mid">Mid</button><button class="chip" data-v="Small">Small</button></div></div>
     </div>
@@ -233,6 +239,7 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
         <option value="fell">Sort · biggest dip</option>
         <option value="comeback">Sort · deepest recovery</option>
         <option value="cheap">Sort · cheapest</option>
+        <option value="business">Sort · best business</option>
         <option value="mcap">Sort · market cap</option>
       </select>
       <button class="chip" id="reset">Default View</button>
@@ -285,6 +292,7 @@ const RAW = JSON.parse(document.getElementById('cellar-data').textContent);
 const pct = x => (x*100).toFixed(0)+'%';
 const signpct = x => (x>=0?'+':'')+(x*100).toFixed(0)+'%';
 const mo = d => (d/30.44).toFixed(0);
+const ord = n => { const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); };  // 72->72nd, 91->91st
 const fmtCap = m => m==null ? '—'
   : m>=1e12 ? '$'+(m/1e12).toFixed(1)+'T'
   : m>=1e10 ? '$'+(m/1e9).toFixed(0)+'B'
@@ -334,42 +342,52 @@ const m3Tier = m3 => m3.mode==='trend'
   ? (m3.vs_usual<=-0.12?'Cheap': m3.vs_usual<=-0.03?'Fair':'Full')
   : (m3.room_10>=0.5?'Cheap': m3.room_10>=0.2?'Fair':'Full');
 
-// The top-of-panel verdict — a deterministic read of the four answers. Price
-// engine only for now (M4–M7 quality is the real gate and isn't built), so the
-// summary carries a "quality check to come" tag and never claims a finished buy.
+// Quality (M4) tier → row-pill colour.
+const QUAL_PILL = {High:'t-good', Solid:'t-good', Mixed:'t-warn', Weak:'t-weak'};
+
+// The top-of-panel verdict — a deterministic read of the answers, now gated on
+// quality (M4). A fallen, cheap, resilient name is only "worth buying" if the
+// business is actually good; a weak business makes the dip suspect. Where we
+// lack the fundamentals to judge quality, the verdict is tagged as unconfirmed.
 const hl = (t,tone) => `<span class="hl-${tone}">${t}</span>`;
 function verdict(r){
-  const f=r.t.fell, cb=r.t.comeback, cell=r.cr.cell;
+  const f=r.t.fell, cb=r.t.comeback, cell=r.cr.cell, q=r.m4;
   if(f==='Minimal') return {label:'Not much of a dip', cls:'v-weak'};
   if(cb==='None')   return {label:"Falls, but doesn't reliably recover", cls:'v-weak'};
   if(cb==='Past')   return {label:'Past its reliable range', cls:'v-warn'};
   if(cell==='trap') return {label:'Cheap on price, but earnings fell more', cls:'v-warn'};
   if(cell==='full') return {label:'In its reliable range, but fully priced', cls:'v-warn'};
-  if(cell==='both' || cell==='growing') return {label:'A dip worth buying', cls:'v-good'};
-  return r.cr.priceCheap ? {label:'A dip worth buying — on price', cls:'v-good'}
-                         : {label:'In its reliable range, not a discount', cls:'v-warn'};
+  const priceGood = cell==='both' || cell==='growing' || (cell==='priceonly' && r.cr.priceCheap);
+  if(!priceGood) return {label:'In its reliable range, not a discount', cls:'v-warn'};
+  const tier = (q && q.available) ? q.tier : null;   // the price setup is there — quality decides
+  if(tier==='Weak')  return {label:'Cheap, but a weak business', cls:'v-warn'};
+  if(tier==='Mixed') return {label:'A dip in a middling business', cls:'v-warn'};
+  if(!tier)          return {label:'A dip worth buying', cls:'v-good', pending:true};  // quality unconfirmed
+  return {label:'A dip worth buying', cls:'v-good'};   // High or Solid quality
 }
 
 RAW.forEach(r=>{
   r.t=tiers(r);
   const cr=cheapRead(r); r.cr=cr;
   r.t.cheap = cr.cell==='priceonly' ? 'priceonly' : CHEAP_PILL[cr.cell].label;
+  r.t.business = (r.m4 && r.m4.available) ? r.m4.tier : 'Limited';   // Good business? tier
   // Combined cheapness for the "cheapest" sort — higher = better buy. Rank by
   // cell (both > growing > trap > full), then by earnings-yield percentile;
   // price-only names, whose earnings we can't read, land in [1,2] on price alone.
   const priceFrac = Math.max(0, Math.min(1, r.m3.mode==='trend' ? -r.m3.vs_usual/0.30 : r.m3.room_10));
   const base = {both:4, growing:3, trap:2, full:1}[cr.cell];
   r.cheapScore = cr.eAvail ? base + cr.ep/100 : 1 + priceFrac;
-  // Buy view (price-engine preview; the real gate is M4–M7): attractively
-  // priced = cheap both ways or growing into its price; a value-trap is not.
-  r.isbuy = (r.t.fell!=='Minimal') && (r.t.comeback==='Strong') &&
-    (cr.cell==='both' || cr.cell==='growing' || (cr.cell==='priceonly' && m3Tier(r.m3)!=='Full'));
+  // Buy view: fell + reliably recovers + cheap (price) + a genuinely good
+  // business (High/Solid quality). Quality is the gate, not a footnote.
+  const priceGood = cr.cell==='both' || cr.cell==='growing' || (cr.cell==='priceonly' && m3Tier(r.m3)!=='Full');
+  r.isbuy = (r.t.fell!=='Minimal') && (r.t.comeback==='Strong') && priceGood &&
+    (r.m4 && r.m4.available && (r.m4.tier==='High' || r.m4.tier==='Solid'));
 });
 
-const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),cap:new Set()},q:'',def:true,sort:'fell',dir:1,open:null};
+const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),cap:new Set()},q:'',def:true,sort:'fell',dir:1,open:null};
 
 function matches(r){
-  for(const d of ['fell','comeback','cheap','cap']){ const s=state.filters[d]; if(s.size&&!s.has(r.t[d])) return false; }
+  for(const d of ['fell','comeback','cheap','business','cap']){ const s=state.filters[d]; if(s.size&&!s.has(r.t[d])) return false; }
   if(state.def && !state.q && !r.isbuy) return false;   // buy-list default, but search finds any stock
   if(state.q){ const q=state.q.toLowerCase(); if(!(r.ticker.toLowerCase().includes(q)||r.name.toLowerCase().includes(q))) return false; }
   return true;
@@ -381,6 +399,7 @@ function sortKey(r){
     case 'fell': return -Math.abs(r.m1.drawdown);
     case 'comeback': return -(r.m2.reliable?r.m2.reliable.depth:0);
     case 'cheap': return -r.cheapScore;
+    case 'business': return -((r.m4 && r.m4.available) ? r.m4.level : -1);
     case 'mcap': return -(r.mcap||0);
     default: return r.ticker;
   }
@@ -459,8 +478,38 @@ function detail(r){
   else if(cr.cell==='trap')     s.push(`It looks cheap on price, but earnings fell further — ${hl('a value-trap risk','warn')}, cheaper than only ${hl(cr.ep+'%','warn')} of its earnings history.`);
   else if(cr.cell==='full')     s.push(`On price and earnings it's ${hl('fully valued','warn')} — no discount today.`);
   else                          s.push(cr.priceCheap?`It's ${hl('below its usual price','good')}, though its earnings can't be read to confirm.`:`It's ${hl('near the top of its range','warn')}, and its earnings can't be read to confirm.`);
+  // Quality (M4) — the gate: add its clause to the narrative and build its box.
+  const q=r.m4;
+  if(q && q.available){
+    if(q.tier==='High' || q.tier==='Solid')
+      s.push(`The business is ${hl(q.tier.toLowerCase()+'-quality','good')} — around the ${hl(ord(q.level),'good')} percentile of ${q.peer_group} peers${q.consistency>=40?`, ${hl(ord(q.consistency)+' even at its worst year','good')}`:''}.`);
+    else if(q.tier==='Mixed')
+      s.push(`The business itself is ${hl('middling','warn')} — about the ${hl(ord(q.level),'warn')} percentile of ${q.peer_group} peers.`);
+    else
+      s.push(`But the business is ${hl('weak','warn')} — only the ${hl(ord(q.level),'warn')} percentile of ${q.peer_group} peers, so the dip may be deserved.`);
+  } else if(q){
+    s.push(`Its ${hl("quality can't be judged yet",'warn')} — too few years of fundamentals.`);
+  }
+  let bizHtml;
+  if(q && q.available){
+    const chips=Object.entries(q.ratio_level).sort((a,b)=>b[1]-a[1])
+      .map(([nm,pc])=>`<span class="rl">${nm} <b>${pc}</b></span>`).join('');
+    const bh={High:'High-quality business',Solid:'Solid business',Mixed:'Middling business',Weak:'Weak business'}[q.tier];
+    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>${bh}</h4>
+      <p class="exwhy">Against <b>${q.peer_group}</b> peers it typically ranks in the <b>${ord(q.level)} percentile</b> on the fundamentals we track${q.consistency>=40?`, and even in its worst year of the last decade it held the <b>${ord(q.consistency)}</b>`:` — though its worst year dropped to the <b>${ord(q.consistency)}</b>`}.</p>
+      <div class="rlwrap">${chips}</div>
+      <div class="kv"><span class="k">Typical standing (level)</span><span class="v">${q.level}th pctile</span></div>
+      <div class="kv"><span class="k">Worst year (consistency)</span><span class="v">${q.consistency}th pctile</span></div>
+      <div class="kv"><span class="k">Peer group</span><span class="v">${q.peer_group} · ${q.peer_n}</span></div>
+      <div class="kv"><span class="k">Coverage <a class="cite" title="ratios computable / quality dimensions / years in the decade window">?</a></span><span class="v">${q.n_ratios}/9 ratios · ${q.n_dims}/5 dims · ${q.n_years}/10 yrs</span></div></div>`;
+  } else if(q){
+    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>Limited data</h4>
+      <p class="exwhy exna">Not enough fundamentals to rank quality — ${q.n_ratios} of 9 ratios over ${q.n_years} year(s). Peer group: ${q.peer_group}.</p></div>`;
+  } else {
+    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>—</h4><p class="exwhy exna">No quality reading available.</p></div>`;
+  }
   const summaryHtml = `<div class="readout ${v.cls}">
-    <div class="verdict">${v.label}<span class="vtag">price engine · quality check to come</span></div>
+    <div class="verdict">${v.label}${v.pending?'<span class="vtag">quality: limited data</span>':''}</div>
     <p class="vnarr">${s.join(' ')}</p></div>`;
   return `<div class="panel">${summaryHtml}<div class="boxes">
     <div class="chartwrap">
@@ -485,8 +534,8 @@ function detail(r){
     <div class="box"><div class="q">Cheap?</div><h4>${cheapHead}</h4>
       <div class="subh">On price · vs its own history</div>${cheapHtml}
       <div class="subh">On earnings · vs its own history</div>${earnHtml}</div>
-    <div class="coming">Good business? — <b>quality, fundamentals-intact, and the solvency floor (M4–M7)</b> attach here next,
-      and become the actual buy gate. Every number above will link to its full working.</div>
+    ${bizHtml}
+    <div class="coming">Good business? shows <b>M4 (quality)</b> now; the mispricing test (M5) and the absolute solvency floor (M7) attach here next.</div>
   </div></div>`;
 }
 
@@ -566,7 +615,7 @@ function render(){
   document.getElementById('s-buy').textContent=RAW.filter(r=>r.isbuy).length.toLocaleString();
   document.getElementById('s-shown').textContent=rows.length.toLocaleString();
   // Default View chip lights up (like the filters) only when NO filter/search is applied
-  const f=state.filters, atDefault=!state.q && !f.fell.size && !f.comeback.size && !f.cheap.size && !f.cap.size;
+  const f=state.filters, atDefault=!state.q && !f.fell.size && !f.comeback.size && !f.cheap.size && !f.business.size && !f.cap.size;
   document.getElementById('reset').setAttribute('aria-pressed', String(atDefault));
   document.getElementById('empty').hidden=rows.length>0;
   const frag=document.createDocumentFragment();
@@ -578,6 +627,9 @@ function render(){
     const cr=r.cr, cheapCell = cr.cell==='priceonly'
       ? `<span class="pill t-na">${m3Tier(m3)}</span><div class="cell-sub">${cheapFig} · earn n/a</div>`
       : `<span class="pill ${CHEAP_PILL[cr.cell].cls}">${CHEAP_PILL[cr.cell].label}</span><div class="cell-sub">earn ${cr.ep}%ile</div>`;
+    const m4=r.m4, bizCell = (m4 && m4.available)
+      ? `<span class="pill ${QUAL_PILL[m4.tier]}">${m4.tier}</span><div class="cell-sub">${m4.level}th pctile</div>`
+      : `<span class="pill t-na">limited data</span><div class="cell-sub">${m4?m4.n_ratios+' of 9 ratios':'—'}</div>`;
     tr.innerHTML=`
       <td class="no"><span class="caret">${state.open===r.ticker?'▾':'▸'}</span>${idx+1}</td>
       <td class="co"><div class="tk">${r.ticker}</div><div class="nm">${r.name}</div></td>
@@ -586,7 +638,7 @@ function render(){
       <td><span class="pill ${cls[r.t.fell]}">${r.t.fell}</span><div class="cell-sub">${signpct(m1.drawdown)} · ${m1.days_since_high}d</div></td>
       <td><span class="pill ${cls[r.t.comeback]}">${r.t.comeback}</span><div class="cell-sub">${rel?'to '+pct(rel.depth)+' · '+mo(rel.median_recovery_days)+'mo':'—'}</div></td>
       <td>${cheapCell}</td>
-      <td><span class="cell-sub">— M4–M7</span></td>
+      <td>${bizCell}</td>
       <td class="links">
         <a href="https://finance.yahoo.com/quote/${r.ticker}" target="_blank" rel="noopener" title="Yahoo Finance" onclick="event.stopPropagation()">Y!</a>
         <a href="https://www.google.com/finance/quote/${r.ticker}" target="_blank" rel="noopener" title="Google Finance" onclick="event.stopPropagation()">G</a></td>`;
@@ -615,7 +667,7 @@ document.getElementById('q').addEventListener('input',e=>{state.q=e.target.value
 document.getElementById('sortsel').addEventListener('change',e=>{state.sort=e.target.value; state.dir=1; render();});
 // Default View button: clears all filters/search/open row -> the default buy list
 document.getElementById('reset').addEventListener('click',()=>{
-  state.filters={fell:new Set(),comeback:new Set(),cheap:new Set(),cap:new Set()}; state.q=''; state.def=true; state.open=null;
+  state.filters={fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),cap:new Set()}; state.q=''; state.def=true; state.open=null;
   document.querySelectorAll('.chips[data-dim] .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
   document.getElementById('q').value=''; render();});
 document.querySelectorAll('th[data-sort]').forEach(th=>th.addEventListener('click',()=>{

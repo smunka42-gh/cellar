@@ -153,16 +153,43 @@ fit*, not a hand-drawn "growth vs. cyclical" label.
 price — recoverable, but not a discount); Netflix's ≈ $91 (so at ~$81 it is
 a modest discount). `[calibrate: window length, fit cutoff]`
 
-### 4.4 · M4 — Quality *(Good business?, part 1)* — **proposed**
+### 4.4 · M4 — Quality *(Good business?, part 1)*
 
-The foundation. A vetted set of fundamental ratios, each turned into a
-**percentile against peers**, per year, over the full 10-K history;
-summarised as a **level** (median year) and a **consistency** (worst year —
-a long track record, not one good year). Peers = the **finest GICS level
-that still has enough members**, falling back up the hierarchy
-(sub-industry → industry → group → sector). The ratio set is vetted on the
-pull for coverage (≥95% after fallback chaining) and for redundancy (metrics
-that move in lockstep are pruned). `[design + calibrate on the pull]`
+The foundation, and the real buy gate. Nine vetted fundamental ratios across
+five quality dimensions — **returns on capital** (ROE, ROA), **margin** (net
+margin), **cash** (free-cash-flow margin, cash conversion), **efficiency**
+(asset turnover), and **balance sheet** (debt/equity, interest coverage,
+current ratio). Each ratio, each year, becomes a **percentile against sector
+peers**; the year's scores are averaged within each dimension and then across
+the five dimensions with **equal weight** — so the three balance-sheet ratios
+can't outvote profitability. That yearly composite is summarised per company
+as a **level** (its median year — typical standing) and a **consistency** (its
+worst year — a track record, not one good year).
+
+**A bounded window, not all of history.** Level and consistency use the last
+**~ten fiscal years**. The per-year percentile already neutralises macro
+cycles (a sector-wide margin squeeze doesn't change a company's *rank*), but an
+unbounded window skews three other ways: the business a decade-plus ago may be
+a different company (level should reflect what it *is*); a stale one-off stumble
+can define the floor; and — the sharp one — "worst year ever" punishes
+long-tenured companies for merely having lived more years in which to have a
+bad one. A fixed decade judges every company on the same span, still spans a
+full cycle (2015–2025 includes the COVID shock), and reflects the business now.
+
+**Peers, coverage, and the honest gaps.** Peers are the **GICS sector** for
+now; the finer levels (industry group → sub-industry) that give truer peers — a
+bank ranked against banks, not against payment networks — are the planned
+refinement. The ratio set was vetted on the real pull: the XBRL fallback chains
+are **verified complete** (every alias that would raise coverage was examined
+and rejected as a *different* concept — e.g. `InterestPaidNet` is cash-flow
+interest, not P&L interest expense; `RepaymentsOfLongTermDebt` is a cash-flow
+line, not the balance), gross margin was dropped (48% coverage, no fallback),
+and operating margin was pruned as redundant with net margin (ρ = 0.93).
+Coverage is strong — the median company computes all nine ratios across all ten
+years. A company is scored only on the ratios it reports, **never a defaulted
+blank**; where a ratio or year is missing, the panel shows it (ratios /
+dimensions / years covered) rather than hiding it, and companies too thin to
+rank are flagged *limited data*. `[calibrate: tier cutoffs; finer-GICS peers]`
 
 ### 4.5 · M5 — Fundamentals status *(Good business?, part 2 — the mispricing test)* — **proposed**
 
