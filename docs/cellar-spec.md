@@ -197,17 +197,34 @@ blank**; where a ratio or year is missing, the panel shows it (ratios /
 dimensions / years covered) rather than hiding it, and companies too thin to
 rank are flagged *limited data*. `[calibrate: tier cutoffs]`
 
-### 4.5 · M5 — Fundamentals status *(Good business?, part 2 — the mispricing test)* — **proposed**
+### 4.5 · M5 — The mispricing test *(Fell?, part 2 / Good business?, part 2)*
 
-Whether the fall was backed by evidence. Financials only change when a
-filing lands, so this is answered around a 10-Q/10-K:
-- dip **shortly after** a filing → compare the new filing to the prior
-  period → fundamentals **declined** or **held up**;
-- dip with **no recent filing** → financials are stale, nothing in the
-  business changed → **"no new evidence"**, shown with an "as of [date]"
-  stamp — the clean-mispricing tell, not a demotion.
+Was the fall backed by new fundamental evidence, or did the price drop while
+the business **held up**? A dip with no deterioration behind it is the clean
+**mispricing** — the ideal thing to hoard; a dip backed by genuinely declining
+fundamentals is **earned**. And because M7 judges the whole decade, M5 adds
+what the decade can't see: *is this sound business rolling over right now?*
 
-Uses the filing dates carried in `companyfacts`. `[design]`
+Read from **quarterly** (10-Q) figures, year-over-year to kill seasonality —
+the timely signal the annual 10-K can't give (the latest filing is a median of
+~a month old). A reframe the data forced: since almost every company files
+freshly, "no recent filing" is rare, so the axis is not *whether* there's a
+filing but whether the latest fundamentals **declined or held up**:
+
+- **Declining** — latest-quarter revenue down > 3%, *or* net income down > 25%
+  (a real top-line decline or a sharp profit fall).
+- **Held up** — otherwise: revenue flat/up and profit not sharply down.
+
+**Financials fall back to annual** year-over-year, since their quarterly tagging
+is unreliable (a bank's quarterly figures come and go under shifting concepts).
+Recent listings with no year-ago comparable read *no timely read*. Everything
+carries an **"as of [quarter-end]"** stamp. It shows on the **Fell? card** (the
+dip's cause) and as a clause in the verdict — a *declining* read **tempers**
+even a cheap, resilient, floor-clearing name; a *held-up* read **strengthens**
+the buy case. It does not hard-gate the buy list (M7 is the hard gate); it is an
+early warning. Calibrated + validated on a fell-on-bad-news vs. fell-on-nothing
+basket (Nike/Lululemon/Intel → declining; Costco/Google/recovered-Target →
+held up). ~24% of the universe reads declining. `[calibrate: the thresholds]`
 
 ### 4.6 · M6 — Cheap on earnings *(Cheap?, part 2)*
 

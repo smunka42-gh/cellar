@@ -85,6 +85,40 @@ def annual_concept(gaap: dict | None, tags: list[str], instant: bool = False) ->
     return out
 
 
+def quarterly_concept(gaap: dict | None, tags: list[str]) -> dict[_dt.date, tuple[_dt.date, float]]:
+    """{period_end_date: (filed_date, value)} for one concept's ~quarterly (3-month)
+    figures from 10-Q filings — the timely signal the annual 10-K can't give.
+
+    Keeps only whole-quarter periods (80–100 days), so year-to-date cumulatives
+    (6- and 9-month) in the same filing are excluded. Merged across the concept's
+    fallback chain (earlier tags preferred), earliest-filed per period end.
+    """
+    if not gaap:
+        return {}
+    out: dict[_dt.date, tuple[_dt.date, float]] = {}
+    for tag in tags:
+        node = gaap.get(tag)
+        if not node:
+            continue
+        rows = []
+        for arr in node.get("units", {}).values():
+            for e in arr:
+                if not e.get("form", "").startswith("10-Q"):
+                    continue
+                if e.get("val") is None or not e.get("start") or not e.get("filed"):
+                    continue
+                try:
+                    end = _date(e["end"])
+                    span = (end - _date(e["start"])).days
+                except Exception:
+                    continue
+                if 80 <= span <= 100:                     # a single quarter, not a YTD cumulative
+                    rows.append((_date(e["filed"]), end, float(e["val"])))
+        for filed, end, val in sorted(rows):
+            out.setdefault(end, (filed, val))
+    return out
+
+
 def load_splits(ticker: str) -> list[tuple[_dt.date, float]]:
     """(date, factor) split events for a ticker, or [] if none."""
     p = SPLITS / f"{ticker}.csv"

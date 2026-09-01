@@ -223,9 +223,10 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
       <div class="asof">Snapshot · __ASOF__</div>
     </div>
     <p class="lede">Every company, every day, answered in plain questions —
-      <b>Fell?</b>, <b>Comes back?</b>, <b>Cheap?</b>, and <b>Good business?</b>
+      <b>Fell?</b> (and was the fall backed by real deterioration, or a mispricing?),
+      <b>Comes back?</b>, <b>Cheap?</b>, and <b>Good business?</b>
       (the <b>hoarding floor</b> — is it worth owning at all? — plus quality vs. peers).
-      The mispricing test attaches next. Click any row for the real workings.</p>
+      Click any row for the real workings.</p>
   </header>
 
   <div class="toolbar">
@@ -484,7 +485,7 @@ function detail(r){
     : 'Fully priced';
   // Top-of-panel summary + the Good business? box. Deterministic, every clause
   // pinned to a computed value — and led by the hoarding gate (M7).
-  const v=verdict(r), m7=r.m7, q=r.m4;
+  const v=verdict(r), m7=r.m7, q=r.m4, m5=r.m5;
   const fellPhrase = m1.days_since_high<=120?'a fresh drop': m1.days_since_high<=365?'a months-long slide':'a slow, multi-year slide';
 
   // Which M7 gates a below-floor name fails (for the narrative).
@@ -517,6 +518,13 @@ function detail(r){
     }
     if(m7 && m7.available)  s.push(`It ${hl('clears the hoarding floor','good')} — consistently profitable, cash-generative, debt serviceable.`);
     else if(m7)            s.push(`Its ${hl("hoarding floor can't be confirmed",'warn')} yet — too little history.`);
+    // Mispricing (M5): was the fall backed by evidence? Only meaningful once it fell.
+    if(m5 && m5.available && r.t.fell!=='Minimal'){
+      const nums=[m5.rev_yoy!=null?`revenue ${signpct(m5.rev_yoy)}`:null, m5.ni_yoy!=null?`earnings ${signpct(m5.ni_yoy)}`:null].filter(Boolean).join(', ');
+      const asof=m5.basis==='quarterly'?`as of ${m5.as_of}`:`FY${m5.as_of}`;
+      if(m5.status==='declining') s.push(`The drop is ${hl('backed by falling fundamentals','warn')} — ${nums} year-on-year (${asof}) — at least partly earned.`);
+      else                        s.push(`And the drop came ${hl('on no deterioration','good')} — ${nums} held up year-on-year (${asof}) — a ${hl('mispricing','good')}.`);
+    }
   }
 
   // Two fundamentals cards: "Worth hoarding?" (M7 — the absolute gate) and
@@ -556,6 +564,16 @@ function detail(r){
     bizHtml=`<div class="box"><div class="q">Good business?</div><h4>—</h4><p class="exwhy exna">No quality reading.</p></div>`;
   }
 
+  // Mispricing test (M5) line for the Fell? card — the dip's cause.
+  let fellM5='';
+  if(m5 && m5.available){
+    const nums=[m5.rev_yoy!=null?`rev ${signpct(m5.rev_yoy)}`:null, m5.ni_yoy!=null?`earnings ${signpct(m5.ni_yoy)}`:null].filter(Boolean).join(' · ');
+    const asof=m5.basis==='quarterly'?m5.as_of:`FY${m5.as_of}`;
+    const cl=m5.status==='declining'?'hl-warn':'hl-good';
+    const word=m5.status==='declining'?'declined':'held up';
+    fellM5=`<p class="exwhy"><b>Mispricing test:</b> around the drop, fundamentals <span class="${cl}">${word}</span> — ${nums} YoY (as of ${asof}${m5.basis==='annual'?', annual':''}).</p>`;
+  }
+
   const summaryHtml = `<div class="readout ${v.cls}">
     <div class="verdict">${v.label}${v.hoard==='na'?'<span class="vtag">hoarding floor: unverified</span>':''}</div>
     <p class="vnarr">${s.join(' ')}</p></div>`;
@@ -574,6 +592,7 @@ function detail(r){
     ${hoardHtml}
     <div class="box"><div class="q">Fell?</div><h4>Down ${pct(Math.abs(m1.drawdown))} from its ${m1.high_window_years}-year high</h4>
       <p class="exwhy">Its ${m1.high_window_years}-year high was <b>$${m1.high.toFixed(m1.high<20?2:0)}</b> on ${m1.high_date} — ${m1.days_since_high} days ago, ${fresh}. (The dip is measured from the recent high, not an ancient one.)</p>
+      ${fellM5}
       <div class="kv"><span class="k">Latest close</span><span class="v">$${m1.last.toFixed(m1.last<20?2:0)}</span></div>
       <div class="kv"><span class="k">Below its ${m1.high_window_years}-year high</span><span class="v">${signpct(m1.drawdown)}</span></div>
       <div class="kv"><span class="k">Days since that high</span><span class="v">${m1.days_since_high}</span></div>
@@ -584,7 +603,7 @@ function detail(r){
       <div class="subh">On price · vs its own history</div>${cheapHtml}
       <div class="subh">On earnings · vs its own history</div>${earnHtml}</div>
     ${bizHtml}
-    <div class="coming"><b>Worth hoarding?</b> is the absolute floor (M7, the gate); <b>Good business?</b> is relative quality (M4). The mispricing test (M5 — did fundamentals actually decline around the dip?) attaches to Good business? next.</div>
+    <div class="coming">All four questions are live: <b>Worth hoarding?</b> (M7, the gate) · <b>Fell?</b> with the mispricing test (M5) · <b>Comes back?</b> (M2) · <b>Cheap?</b> (M3 × M6) · <b>Good business?</b> (M4). Every number links to its full working.</div>
   </div></div>`;
 }
 
