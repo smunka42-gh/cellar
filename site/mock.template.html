@@ -49,11 +49,11 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 .brand{font-family:"Fraunces",Georgia,serif; font-weight:700; font-size:38px; letter-spacing:-.02em; color:var(--accent); line-height:1}
 .tag{color:var(--muted); font-size:15px; max-width:56ch}
 .asof{margin-left:auto; color:var(--faint); font-size:12.5px; text-transform:uppercase; letter-spacing:.08em}
-.lede{margin:14px 0 0; color:var(--muted); max-width:74ch; font-size:14.5px}
+.lede{margin:14px 0 0; color:var(--muted); font-size:14.5px}
 .lede b{color:var(--ink); font-weight:600}
 
 /* toolbar */
-.toolbar{position:sticky; top:0; z-index:5; background:var(--paper);
+.toolbar{background:var(--paper);
   padding:16px 0 14px; border-bottom:1px solid var(--line); margin-bottom:2px}
 .filters{display:flex; gap:22px; flex-wrap:wrap; align-items:flex-end}
 .fgroup{display:flex; flex-direction:column; gap:7px}
@@ -90,26 +90,32 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 .stat .n{font-family:"IBM Plex Mono",monospace; font-size:24px; font-weight:500; color:var(--ink)}
 .stat .n em{color:var(--accent); font-style:normal}
 .stat .l{font-size:12px; color:var(--muted); margin-top:1px}
-.note{color:var(--faint); font-size:12.5px; margin-left:auto; max-width:40ch; text-align:right}
+.note{color:var(--muted); font-size:12.5px; margin:2px 0 0; padding:9px 13px;
+  background:var(--raised); border:1px solid var(--line); border-radius:8px}
 
 /* table */
 .tbl{width:100%; border-collapse:collapse; margin-top:8px; table-layout:fixed}
-.tbl thead th{position:sticky; top:64px; background:var(--paper); z-index:3;
-  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.08em; line-height:1.25;
+.tbl thead th{position:sticky; top:0; background:var(--paper); z-index:4;
+  text-align:center; font-size:11px; text-transform:uppercase; letter-spacing:.08em; line-height:1.25;
   color:var(--faint); font-weight:600; padding:10px 12px; border-bottom:1px solid var(--line); cursor:pointer;
-  vertical-align:bottom}   /* headers may wrap to two lines; align on the baseline */
-.tbl thead th.num{text-align:right}
+  vertical-align:bottom}   /* frozen on scroll; centered (Company overridden left) */
+.tbl thead th.co-h{text-align:left}
 .tbl thead th:hover{color:var(--ink)}
 .tbl tbody tr.row{border-bottom:1px solid var(--line); cursor:pointer}
 .tbl tbody tr.row:hover{background:var(--raised)}
-.tbl td{padding:11px 12px; vertical-align:middle}
+.tbl td{padding:11px 12px; vertical-align:middle; text-align:center}
+.tbl td.co{text-align:left}
+.no{color:var(--muted); font-family:"IBM Plex Mono",monospace; font-size:13px; white-space:nowrap}
+.no .caret{color:var(--faint); opacity:0; margin-right:3px; font-size:10px}
+tr.row:hover .no .caret{opacity:.55}
+tr.row[aria-expanded="true"] .no .caret{opacity:1; color:var(--accent)}
 .co .tk{font-family:"IBM Plex Mono",monospace; font-weight:500; font-size:14px}
 .co .nm{color:var(--muted); font-size:12.5px; margin-top:1px; line-height:1.3;
   overflow-wrap:break-word; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
 .sec{color:var(--faint); font-size:12px}
 .cell-fig{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--ink)}
 .cell-sub{color:var(--faint); font-size:11.5px; font-family:"IBM Plex Mono",monospace}
-.num{text-align:right}
+.num{text-align:center}
 
 /* tier pills */
 .pill{display:inline-block; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:600;
@@ -137,6 +143,17 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 .hl-good{color:var(--good); font-weight:600}
 .hl-warn{color:var(--warn); font-weight:600}
 .hl-num{font-weight:700; font-variant-numeric:tabular-nums}
+
+/* column-adjust scaffold — only active with ?cols in the URL (temporary tool) */
+.colhandle{position:absolute; top:0; right:-4px; width:9px; height:100%; cursor:col-resize; z-index:6}
+.colhandle:hover{background:var(--accent); opacity:.5}
+#colbar{position:fixed; left:0; right:0; bottom:0; z-index:60; background:var(--accent); color:#fff;
+  font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.7; padding:9px 16px;
+  box-shadow:0 -2px 12px rgba(0,0,0,.18)}
+#colbar code{background:rgba(255,255,255,.18); color:#fff; padding:1px 6px; border-radius:4px; font-weight:600}
+#colbar b{font-family:"Libre Franklin",system-ui,sans-serif}
+#colreset{margin-left:10px; background:#fff; color:var(--accent); border:none; border-radius:6px;
+  padding:3px 12px; font-family:"Libre Franklin",system-ui,sans-serif; font-weight:600; font-size:11px; cursor:pointer}
 .exp{color:var(--faint); font-family:"IBM Plex Mono",monospace; font-size:15px; width:20px; text-align:center}
 tr.row[aria-expanded="true"] .exp{color:var(--accent)}
 
@@ -160,10 +177,10 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
 .coming{grid-column:1/-1; border:1px dashed var(--line); border-radius:10px; padding:12px 15px;
   color:var(--muted); font-size:12.5px; background:transparent}
 .coming b{color:var(--ink)}
-.links{display:flex; flex-direction:column; gap:4px; align-items:flex-start}   /* Yahoo above Google */
-.links a{display:inline-block; width:25px; height:22px; line-height:21px; text-align:center;
+.links{white-space:nowrap}   /* plain cell — inherits the row's vertical-align:middle */
+.links a{display:inline-block; width:25px; height:22px; line-height:21px; text-align:center; margin:0 2px;
   border:1px solid var(--line); border-radius:6px; color:var(--muted); text-decoration:none;
-  font-family:"IBM Plex Mono",monospace; font-size:11px}
+  font-family:"IBM Plex Mono",monospace; font-size:11px; vertical-align:middle}
 .links a:hover{border-color:var(--accent); color:var(--accent)}
 .chartwrap{grid-column:1/-1; background:var(--surface); border:1px solid var(--line);
   border-radius:10px; padding:12px 14px 10px; box-shadow:var(--shadow); margin-bottom:2px}
@@ -228,19 +245,20 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
     <div class="stat"><div class="n" id="s-total">—</div><div class="l">SEC-filing companies</div></div>
     <div class="stat"><div class="n"><em id="s-buy">—</em></div><div class="l">in today's buy view</div></div>
     <div class="stat"><div class="n" id="s-shown">—</div><div class="l">shown</div></div>
-    <div class="note">Price-engine preset: a meaningful dip, sitting inside the depth it reliably recovers from, and cheap either on price or on earnings (not a value-trap). The real buy gate adds “Good business?”.</div>
   </div>
+  <div class="note">Price-engine preset: a meaningful dip, sitting inside the depth it reliably recovers from, and cheap either on price or on earnings (not a value-trap). The real buy gate adds “Good business?”.</div>
 
   <table class="tbl">
     <colgroup>
-      <col style="width:15%"><!-- Company    --><col style="width:12%"><!-- Sector    -->
-      <col style="width:8%" ><!-- Market cap --><col style="width:13%"><!-- Fell?     -->
-      <col style="width:14%"><!-- Comes back --><col style="width:16%"><!-- Cheap?    -->
-      <col style="width:11%"><!-- Good biz   --><col style="width:7%" ><!-- Links     -->
-      <col style="width:4%" ><!-- expand     -->
+      <col style="width:4%" ><!-- No.        --><col style="width:15%"><!-- Company   -->
+      <col style="width:11%"><!-- Sector     --><col style="width:8%" ><!-- Market cap-->
+      <col style="width:13%"><!-- Fell?      --><col style="width:14%"><!-- Comes back-->
+      <col style="width:16%"><!-- Cheap?     --><col style="width:11%"><!-- Good biz  -->
+      <col style="width:8%" ><!-- Links      -->
     </colgroup>
     <thead><tr>
-      <th data-sort="ticker">Company</th>
+      <th>No.</th>
+      <th class="co-h" data-sort="ticker">Company</th>
       <th>Sector</th>
       <th class="num">Market cap</th>
       <th data-sort="fell">Fell?</th>
@@ -248,7 +266,6 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
       <th data-sort="cheap">Cheap?</th>
       <th>Good business?</th>
       <th>Links</th>
-      <th></th>
     </tr></thead>
     <tbody id="tb"></tbody>
   </table>
@@ -553,7 +570,7 @@ function render(){
   document.getElementById('reset').setAttribute('aria-pressed', String(atDefault));
   document.getElementById('empty').hidden=rows.length>0;
   const frag=document.createDocumentFragment();
-  for(const r of rows){
+  rows.forEach((r,idx)=>{
     const tr=document.createElement('tr'); tr.className='row'; tr.tabIndex=0;
     tr.setAttribute('aria-expanded', state.open===r.ticker?'true':'false');
     const m1=r.m1,m3=r.m3,rel=r.m2.reliable;
@@ -562,6 +579,7 @@ function render(){
       ? `<span class="pill t-na">${m3Tier(m3)}</span><div class="cell-sub">${cheapFig} · earn n/a</div>`
       : `<span class="pill ${CHEAP_PILL[cr.cell].cls}">${CHEAP_PILL[cr.cell].label}</span><div class="cell-sub">earn ${cr.ep}%ile</div>`;
     tr.innerHTML=`
+      <td class="no"><span class="caret">${state.open===r.ticker?'▾':'▸'}</span>${idx+1}</td>
       <td class="co"><div class="tk">${r.ticker}</div><div class="nm">${r.name}</div></td>
       <td class="sec">${r.sector}</td>
       <td class="num cell-fig">${fmtCap(r.mcap)}</td>
@@ -571,8 +589,7 @@ function render(){
       <td><span class="cell-sub">— M4–M7</span></td>
       <td class="links">
         <a href="https://finance.yahoo.com/quote/${r.ticker}" target="_blank" rel="noopener" title="Yahoo Finance" onclick="event.stopPropagation()">Y!</a>
-        <a href="https://www.google.com/finance/quote/${r.ticker}" target="_blank" rel="noopener" title="Google Finance" onclick="event.stopPropagation()">G</a></td>
-      <td class="exp">${state.open===r.ticker?'−':'+'}</td>`;
+        <a href="https://www.google.com/finance/quote/${r.ticker}" target="_blank" rel="noopener" title="Google Finance" onclick="event.stopPropagation()">G</a></td>`;
     const toggle=()=>{ const opening=state.open!==r.ticker; state.open=opening?r.ticker:null; if(opening) chartState={win:'MAX',ind:false}; render(); };
     tr.addEventListener('click',toggle);
     tr.addEventListener('keydown',e=>{if(e.key==='Enter'){toggle();}});
@@ -581,7 +598,7 @@ function render(){
       const dr=document.createElement('tr'); dr.className='detail';
       dr.innerHTML=`<td colspan="9">${detail(r)}</td>`; frag.appendChild(dr);
     }
-  }
+  });
   tb.appendChild(frag);
   if(state.open){ const openR=rows.find(x=>x.ticker===state.open); const wrap=tb.querySelector('tr.detail .chartwrap'); if(openR&&wrap) mountChart(wrap,openR); }
 }
@@ -606,4 +623,33 @@ document.querySelectorAll('th[data-sort]').forEach(th=>th.addEventListener('clic
   if(state.sort===k)state.dir*=-1; else{state.sort=k; state.dir=1;} render();}));
 
 render();
+
+// ── Column-width adjust tool — TEMPORARY scaffold, gated behind ?cols (or #cols).
+// Drag the dividers between headers; the bottom bar prints live widths to read
+// back to Claude, who freezes them into the <colgroup> and deletes this block.
+if(/cols/.test(location.search) || /cols/.test(location.hash)){
+  const table=document.querySelector('table.tbl');
+  const cols=[...table.querySelectorAll('colgroup col')];
+  const ths=[...table.querySelectorAll('thead th')];
+  const labels=['No.','Company','Sector','Mkt cap','Fell','Comes back','Cheap','Good biz','Links'];
+  const original=cols.map(c=>c.style.width);    // remember the starting widths for Reset
+  const bar=document.createElement('div'); bar.id='colbar'; document.body.appendChild(bar);
+  const pcts=()=>{ const tw=table.getBoundingClientRect().width; return ths.map(th=>th.getBoundingClientRect().width/tw*100); };
+  const paint=()=>{ bar.innerHTML='<b>Column-adjust mode</b> — drag the dividers, then read these to Claude: '
+      + pcts().map((x,i)=>`${labels[i]} <code>${x.toFixed(1)}%</code>`).join('  ·  ')
+      + ' <button id="colreset">Reset widths</button>';
+    bar.querySelector('#colreset').addEventListener('click',()=>{ cols.forEach((c,i)=>c.style.width=original[i]); paint(); }); };
+  ths.forEach((th,i)=>{ if(i>=ths.length-1) return;
+    const h=document.createElement('div'); h.className='colhandle'; th.appendChild(h);
+    h.addEventListener('click',e=>e.stopPropagation());   // don't trigger the column sort
+    h.addEventListener('mousedown',e=>{ e.preventDefault(); e.stopPropagation();
+      const x0=e.clientX, tw=table.getBoundingClientRect().width, start=pcts(), MIN=3;
+      const mm=ev=>{ let d=(ev.clientX-x0)/tw*100, a=start[i]+d, b=start[i+1]-d;
+        if(a<MIN){b-=MIN-a;a=MIN;} if(b<MIN){a-=MIN-b;b=MIN;}
+        cols[i].style.width=a+'%'; cols[i+1].style.width=b+'%'; paint(); };
+      const mu=()=>{ document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); };
+      document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu); });
+  });
+  paint();
+}
 </script>
