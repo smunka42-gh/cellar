@@ -71,6 +71,10 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 :root[data-theme="dark"] .chip[aria-pressed="true"],
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#17130F}}
 .spacer{flex:1}
+.fgroup-slider{min-width:190px}
+.fgroup-slider .flabel{text-transform:none; letter-spacing:0; font-size:12px; color:var(--muted)}
+.fgroup-slider .flabel b{color:var(--accent); font-weight:600; font-family:"IBM Plex Mono",monospace}
+.anslider{width:180px; accent-color:var(--accent); cursor:pointer}
 .viewtoggle{display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; background:var(--surface)}
 .vbtn{border:none; background:transparent; color:var(--muted); font-family:inherit; font-size:12.5px; font-weight:600; padding:5px 15px; cursor:pointer; transition:all .12s}
 .vbtn[aria-pressed="true"]{background:var(--accent); color:#fff}
@@ -338,6 +342,8 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
         <button class="chip" data-v="Clears" title="Passes the floor: consistently profitable, cash-generative, debt serviceable">Clears</button><button class="chip" data-v="Below" title="Fails the floor: not sound enough to own at all, regardless of price">Below</button></div></div>
       <div class="fgroup"><span class="flabel" title="Company size by market capitalization">Size</span><div class="chips" data-dim="cap">
         <button class="chip" data-v="Mega" title="Market cap $200B or more">Mega</button><button class="chip" data-v="Large" title="Market cap $10B–$200B">Large</button><button class="chip" data-v="Mid" title="Market cap $2B–$10B">Mid</button><button class="chip" data-v="Small" title="Market cap under $2B">Small</button></div></div>
+      <div class="fgroup fgroup-slider"><span class="flabel" title="Filter to names whose Wall Street consensus is at least this bullish (1 = Strong Buy … 5 = Strong Sell)">Analysts rate ≤ <b id="anval">any</b></span>
+        <input type="range" id="anslider" class="anslider" min="1" max="5" step="0.1" value="5" aria-label="Maximum analyst rating"></div>
     </div>
     <div class="toolrow">
       <div class="viewtoggle" id="viewtoggle" role="group" aria-label="View">
@@ -517,13 +523,14 @@ RAW.forEach(r=>{
 });
 
 const FILTER_DIMS = ['fell','comeback','cheap','business','floor','cap'];
-const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),floor:new Set(),cap:new Set()},q:'',view:'buy',sort:'fell',dir:1,open:null};
+const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),floor:new Set(),cap:new Set()},q:'',analystMax:null,view:'buy',sort:'fell',dir:1,open:null};
 
 function matches(r){
   // Buy list = the curated shortlist, full stop. "All" = the whole universe with
   // the filter chips and search active. (Touching a filter or search flips to All.)
   if(state.view==='buy') return r.isbuy;
   for(const d of FILTER_DIMS){ const s=state.filters[d]; if(s.size&&!s.has(r.t[d])) return false; }
+  if(state.analystMax!=null){ const rm=r.info&&r.info.rm; if(rm==null||rm>state.analystMax) return false; }
   if(state.q){ const q=state.q.toLowerCase(); if(!(r.ticker.toLowerCase().includes(q)||r.name.toLowerCase().includes(q))) return false; }
   return true;
 }
@@ -954,6 +961,13 @@ document.querySelectorAll('.chips').forEach(g=>{
   }));
 });
 document.getElementById('q').addEventListener('input',e=>{ state.q=e.target.value; if(e.target.value) state.view='all'; render(); });
+// Analyst-rating slider: filter to consensus at least this bullish (≤ value). 5 = off.
+document.getElementById('anslider').addEventListener('input',e=>{
+  const v=parseFloat(e.target.value);
+  state.analystMax = v>=5 ? null : v;
+  document.getElementById('anval').textContent = v>=5 ? 'any' : v.toFixed(1);
+  state.view='all'; render();
+});
 function markSort(){
   document.querySelectorAll('th[data-sort]').forEach(th=>{
     const on = th.dataset.sort===state.sort;
@@ -967,6 +981,7 @@ document.querySelectorAll('#viewtoggle .vbtn').forEach(b=>b.addEventListener('cl
   if(state.view==='buy'){
     state.filters={fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),floor:new Set(),cap:new Set()};
     state.q=''; document.getElementById('q').value='';
+    state.analystMax=null; const sl=document.getElementById('anslider'); if(sl){sl.value=5; document.getElementById('anval').textContent='any';}
     document.querySelectorAll('.chips[data-dim] .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
   }
   render();
