@@ -230,10 +230,11 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
 .coming{grid-column:1/-1; border:1px dashed var(--line); border-radius:10px; padding:12px 15px;
   color:var(--muted); font-size:12.5px; background:transparent}
 .coming b{color:var(--ink)}
-.links{white-space:nowrap}   /* plain cell — inherits the row's vertical-align:middle */
-.links a{display:inline-block; width:25px; height:22px; line-height:21px; text-align:center; margin:0 2px;
+.tbl td.links{padding-left:6px; padding-right:6px}
+.linkwrap{display:flex; justify-content:center; align-items:center; gap:6px}
+.links a{display:inline-flex; align-items:center; justify-content:center; width:26px; height:24px;
   border:1px solid var(--line); border-radius:6px; color:var(--muted); text-decoration:none;
-  font-family:"IBM Plex Mono",monospace; font-size:11px; vertical-align:middle}
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:-.02em}
 .links a:hover{border-color:var(--accent); color:var(--accent)}
 .chartwrap{grid-column:1/-1; background:var(--surface); border:1px solid var(--line);
   border-radius:10px; padding:12px 14px 10px; box-shadow:var(--shadow); margin-bottom:2px}
@@ -360,8 +361,8 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
       <col style="width:4%" ><!-- No.        --><col style="width:10%"><!-- Company   -->
       <col style="width:11%"><!-- Sector     --><col style="width:8%" ><!-- Market cap-->
       <col style="width:12%"><!-- Fell?      --><col style="width:14%"><!-- Comes back-->
-      <col style="width:15%"><!-- Cheap?     --><col style="width:11%"><!-- Good biz  -->
-      <col style="width:10%"><!-- Analysts   --><col style="width:5%" ><!-- Links      -->
+      <col style="width:13%"><!-- Cheap?     --><col style="width:11%"><!-- Good biz  -->
+      <col style="width:10%"><!-- Analysts   --><col style="width:7%" ><!-- Links      -->
     </colgroup>
     <thead><tr>
       <th>No.</th>
@@ -912,9 +913,9 @@ function render(){
       <td>${cheapCell}</td>
       <td>${bizCell}</td>
       <td>${analystCell(r.info)}</td>
-      <td class="links">
+      <td class="links"><div class="linkwrap">
         <a href="https://finance.yahoo.com/quote/${r.ticker}" target="_blank" rel="noopener" title="Yahoo Finance" onclick="event.stopPropagation()">Y!</a>
-        <a href="https://www.google.com/finance/quote/${r.ticker}" target="_blank" rel="noopener" title="Google Finance" onclick="event.stopPropagation()">G</a></td>`;
+        <a href="https://www.google.com/finance/quote/${r.ticker}" target="_blank" rel="noopener" title="Google Finance" onclick="event.stopPropagation()">G</a></div></td>`;
     const toggle=()=>{ const opening=state.open!==r.ticker; state.open=opening?r.ticker:null; if(opening) chartState={win:'MAX',ind:false}; render(); };
     tr.addEventListener('click',toggle);
     tr.addEventListener('keydown',e=>{if(e.key==='Enter'){toggle();}});
