@@ -1,14 +1,16 @@
 name: Daily refresh
 
-# Rebuilds the site from fresh data each weekday evening (after the US close) and
-# redeploys it to GitHub Pages. Also runnable on demand from the Actions tab.
+# Rebuilds the site from fresh prices each weekday evening (after the US close)
+# and redeploys it to GitHub Pages. Also runnable on demand from the Actions tab.
 #
-# Data strategy: a rolling cache holds the heavy, slow-changing inputs (the 4.4 GB
-# SEC facts cache and full price history). Each run restores the latest cache, then
-# does cheap INCREMENTAL updates — append today's closes (batched), refresh facts
-# only for companies that filed recently — rather than re-pulling everything. The
-# first run (empty cache) does a one-time full "prime" pull. A sanity guard blocks
-# deploying a degraded build, so a bad pull never overwrites the live site.
+# IMPORTANT — why this is prices-only: SEC (data.sec.gov and www.sec.gov) blocks
+# GitHub Actions' datacenter IPs, so the SEC-derived measures (M4 quality, M5
+# mispricing, M6 cheap-on-earnings, M7 the hoarding floor) and SEC filings CANNOT
+# be pulled here. They change slowly and ship as a committed snapshot
+# (data/results_dip.json, data/filings.json), refreshed locally where SEC works.
+# Prices DO work in CI (yfinance) and are the daily-critical input, so this job
+# refreshes prices and recomputes only the price-based measures (M1-M3), plus the
+# yfinance-sourced profiles/analyst ratings, then rebuilds and deploys.
 
 on:
   schedule:
@@ -22,17 +24,10 @@ concurrency:
   group: cellar-refresh
   cancel-in-progress: false
 
-env:
-  # SEC asks automated clients to identify themselves with a contact; the public
-  # repo URL serves as that contact (no personal info). www.sec.gov (Akamai) is
-  # stricter than data.sec.gov — the universe snapshot is committed so CI never
-  # needs to fetch company_tickers.json from www.sec.gov.
-  SEC_USER_AGENT: "cellar-screener (+https://github.com/smunka42-gh/cellar)"
-
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
@@ -43,34 +38,39 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Restore data cache
+      - name: Restore price cache
         uses: actions/cache/restore@v4
         with:
           path: |
             data/prices
             data/splits
-            data/facts
             data/market_cap.json
             data/info.json
-          key: cellar-data-${{ github.run_id }}
+          key: cellar-prices-${{ github.run_id }}
           restore-keys: |
-            cellar-data-
+            cellar-prices-
 
-      - name: Prime (first run) or incrementally refresh prices
+      - name: Refresh prices (incremental, or full on first run)
         run: |
-          if [ ! -d data/facts ] || [ "$(ls data/facts 2>/dev/null | wc -l)" -lt 100 ]; then
-            echo "::notice::facts cache empty — full prime pull (one-time, slow)"
-            python scripts/pull.py all
+          if [ ! -d data/prices ] || [ "$(ls data/prices 2>/dev/null | wc -l)" -lt 100 ]; then
+            echo "::notice::price cache empty — full price pull (one-time)"
+            python scripts/pull.py prices
+            python scripts/pull.py mcap
           else
             echo "::notice::cache present — incremental price refresh"
             python scripts/refresh_prices.py
           fi
 
-      - name: Pull recent SEC filings
-        run: python scripts/pull_filings.py
-
-      - name: Refresh fundamentals for recent filers
-        run: python scripts/refresh_facts.py
+      - name: Save price cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            data/prices
+            data/splits
+            data/market_cap.json
+            data/info.json
+          key: cellar-prices-${{ github.run_id }}
 
       - name: Refresh profiles + analyst ratings (weekly)
         run: |
@@ -81,8 +81,8 @@ jobs:
             echo "info fresh (< 6 days) — skipping"
           fi
 
-      - name: Compute measures (M1-M7)
-        run: python scripts/run_dip.py
+      - name: Recompute price measures (M1-M3) on the fundamentals snapshot
+        run: python scripts/refresh_measures.py
 
       - name: Build the site
         run: python scripts/build_mock.py
@@ -90,9 +90,9 @@ jobs:
       - name: Sanity guard — refuse to deploy a degraded build
         run: |
           n=$(python -c "import json;print(len(json.load(open('data/results_dip.json'))))")
-          echo "companies computed: $n"
+          echo "companies in build: $n"
           if [ "$n" -lt 1300 ]; then
-            echo "::error::only $n companies — pull looks degraded, aborting deploy (live site unchanged)"
+            echo "::error::only $n companies — build looks degraded, aborting deploy (live site unchanged)"
             exit 1
           fi
 
@@ -106,15 +106,3 @@ jobs:
           git add index.html
           git commit -q -m "Deploy $(date -u +%Y-%m-%d)"
           git push -f -q "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
-
-      - name: Save data cache
-        if: success()
-        uses: actions/cache/save@v4
-        with:
-          path: |
-            data/prices
-            data/splits
-            data/facts
-            data/market_cap.json
-            data/info.json
-          key: cellar-data-${{ github.run_id }}
