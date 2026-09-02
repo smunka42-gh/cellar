@@ -429,12 +429,16 @@ un-auditable.
 - **Header** — `Daily Analysis: S&P 1500*` · asterisk: excludes REITs.
 - **Filters** — **tiers** for each question: Fell (Big/Some/Minimal);
   Comes-back (Strong/Past/None); Cheap (Both/Growing-in/Trap-risk/Full — the
-  M3×M6 cells of §5); Good business (High/Solid/Mixed/Weak — M4 quality); a
-  **Hoarding floor** filter (Clears/Below — M7); and a **Size** tier
-  (Mega ≥ $200B / Large / Mid / Small < $2B).
-- **Sort** — every column heading sorts (No./Company/Market cap/Fell?/Comes
-  back?/Cheap?/Good business?/Analysts), click to toggle direction, an arrow
-  marks the active column. (The old sort dropdown was removed as redundant.)
+  M3×M6 cells of §5); **Mispriced** (Held-up/Declining/No-read — M5); Good
+  business (High/Solid/Mixed/Weak — M4 quality); a **Hoarding floor** filter
+  (Clears/Below — M7); a **Size** tier (Mega ≥ $200B / Large / Mid / Small
+  < $2B); and an **Analyst-rating slider** (consensus ≤ X, 1 Strong Buy …
+  5 Strong Sell). Each chip carries a hover tooltip explaining its threshold.
+- **Sort** — every column heading sorts (No./Company/Market cap/Good business?/
+  Comes back?/Cheap?/Fell?/Mispriced?/Analysts), click to toggle direction, an
+  arrow marks the active column. (The old sort dropdown was removed as redundant.)
+- **Columns** follow the card narrative order: Good business? · Comes back? ·
+  Cheap? · Fell? · Mispriced? · Analysts. (Sector was dropped for room.)
 - **Theme** — light / dark, defaulting to **Auto: dark after local sunset**
   (estimated from the browser's timezone, no location prompt, no network); a
   toggle (Auto → Light → Dark) overrides and is remembered per browser.
