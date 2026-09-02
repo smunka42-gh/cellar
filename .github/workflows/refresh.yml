@@ -23,7 +23,11 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SEC_USER_AGENT: "cellar-screener research (EDGAR daily refresh)"
+  # SEC asks automated clients to identify themselves with a contact; the public
+  # repo URL serves as that contact (no personal info). www.sec.gov (Akamai) is
+  # stricter than data.sec.gov — the universe snapshot is committed so CI never
+  # needs to fetch company_tickers.json from www.sec.gov.
+  SEC_USER_AGENT: "cellar-screener (+https://github.com/smunka42-gh/cellar)"
 
 jobs:
   refresh:
@@ -43,7 +47,6 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: |
-            data/universe.json
             data/prices
             data/splits
             data/facts
@@ -99,7 +102,6 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: |
-            data/universe.json
             data/prices
             data/splits
             data/facts
