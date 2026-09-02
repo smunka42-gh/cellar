@@ -59,7 +59,7 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 /* toolbar */
 .toolbar{background:var(--paper);
   padding:16px 0 14px; border-bottom:1px solid var(--line); margin-bottom:2px}
-.filters{display:flex; gap:22px; flex-wrap:wrap; align-items:flex-end}
+.filters{display:flex; row-gap:16px; column-gap:22px; flex-wrap:wrap; align-items:flex-end}
 .fgroup{display:flex; flex-direction:column; gap:7px}
 .flabel{font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--faint); font-weight:600}
 .chips{display:flex; gap:6px}
@@ -76,7 +76,7 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
 .vbtn[aria-pressed="true"]{background:var(--accent); color:#fff}
 .vbtn:not([aria-pressed="true"]):hover{color:var(--ink)}
 .tool-right{display:flex; gap:10px; align-items:flex-end}
-.toolrow{display:flex; gap:10px; align-items:center; margin-top:14px}
+.toolrow{display:flex; gap:10px; align-items:center; margin-top:16px}
 .searchbox{margin-left:0}
 .search{border:1px solid var(--line); background:var(--surface); color:var(--ink);
   padding:5px 14px; border-radius:999px; font-family:inherit; font-size:12.5px; font-weight:500;
@@ -340,11 +340,9 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
         <button class="chip" data-v="Mega" title="Market cap $200B or more">Mega</button><button class="chip" data-v="Large" title="Market cap $10B–$200B">Large</button><button class="chip" data-v="Mid" title="Market cap $2B–$10B">Mid</button><button class="chip" data-v="Small" title="Market cap under $2B">Small</button></div></div>
     </div>
     <div class="toolrow">
-      <span class="sorthint">Click a column heading to sort</span>
       <div class="viewtoggle" id="viewtoggle" role="group" aria-label="View">
         <button class="vbtn" data-view="buy">Buy list</button><button class="vbtn" data-view="all">All 1,393</button>
       </div>
-      <div class="spacer"></div>
       <input class="search searchbox" id="q" placeholder="ticker / name" aria-label="search">
     </div>
   </div>
@@ -358,21 +356,21 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
 
   <table class="tbl">
     <colgroup>
-      <col style="width:4%" ><!-- No.        --><col style="width:10%"><!-- Company   -->
-      <col style="width:11%"><!-- Sector     --><col style="width:8%" ><!-- Market cap-->
-      <col style="width:12%"><!-- Fell?      --><col style="width:14%"><!-- Comes back-->
-      <col style="width:13%"><!-- Cheap?     --><col style="width:11%"><!-- Good biz  -->
+      <col style="width:4%" ><!-- No.        --><col style="width:12%"><!-- Company   -->
+      <col style="width:8%" ><!-- Market cap --><col style="width:11%"><!-- Good biz  -->
+      <col style="width:13%"><!-- Comes back --><col style="width:13%"><!-- Cheap?    -->
+      <col style="width:11%"><!-- Fell?      --><col style="width:11%"><!-- Mispriced?-->
       <col style="width:10%"><!-- Analysts   --><col style="width:7%" ><!-- Links      -->
     </colgroup>
     <thead><tr>
       <th>No.</th>
       <th class="co-h" data-sort="ticker">Company</th>
-      <th>Sector</th>
       <th class="num" data-sort="mcap">Market cap</th>
-      <th data-sort="fell">Fell?</th>
+      <th data-sort="business">Good business?</th>
       <th data-sort="comeback">Comes back?</th>
       <th data-sort="cheap">Cheap?</th>
-      <th data-sort="business">Good business?</th>
+      <th data-sort="fell">Fell?</th>
+      <th data-sort="mispriced" title="The mispricing test (M5): did the business hold up around the fall (Held up = a true mispricing) or decline (an earned fall)?">Mispriced?</th>
       <th data-sort="analyst" title="Wall Street analyst consensus (1 = Strong Buy … 5 = Strong Sell). Shown beside Cellar's contrarian read — a cautious consensus on a fallen quality name is the setup, not a veto.">Analysts</th>
       <th>Links</th>
     </tr></thead>
@@ -457,6 +455,14 @@ function analystCell(info){
   if(rm==null) return `<span class="pill t-na">no coverage</span>`;
   return `<span class="pill ${analystCls(rm)}">${analystLabel(info)}</span><div class="cell-sub">${rm.toFixed(1)} · ${info.rn||'?'}</div>`;
 }
+// Mispriced? (M5): held up = a true mispricing (green); declining = an earned fall (amber).
+function mispCell(r){
+  const m5=r.m5;
+  if(!m5 || !m5.available) return `<span class="pill t-na">no read</span>`;
+  const held=m5.status==='held_up';
+  const sub=[m5.rev_yoy!=null?`rev ${signpct(m5.rev_yoy)}`:null, m5.ni_yoy!=null?`ni ${signpct(m5.ni_yoy)}`:null].filter(Boolean).join(' · ');
+  return `<span class="pill ${held?'t-good':'t-warn'}">${held?'Held up':'Declining'}</span><div class="cell-sub">${sub||'—'}</div>`;
+}
 
 // The top-of-panel verdict — a deterministic read of the answers, led by the
 // HOARDING GATE (M7). If the business isn't worth hoarding, the dip, the
@@ -530,6 +536,7 @@ function sortKey(r){
     case 'cheap': return -r.cheapScore;
     case 'business': return -((r.m4 && r.m4.available) ? r.m4.level : -1);
     case 'analyst': return (r.info && r.info.rm!=null) ? r.info.rm : 99;   // most bullish (1) first
+    case 'mispriced': return (r.m5 && r.m5.available) ? (r.m5.status==='held_up'?0:1) : 2;  // held up first
     case 'mcap': return -(r.mcap||0);
     default: return r.ticker;
   }
@@ -909,15 +916,17 @@ function render(){
     const bizCell = (m4 && m4.available)
       ? `<span class="pill ${QUAL_PILL[m4.tier]}">${m4.tier}</span><div class="cell-sub">${bizSub}</div>`
       : `<span class="pill t-na">limited data</span><div class="cell-sub">${bizSub}</div>`;
+    const fellCell = `<span class="pill ${cls[r.t.fell]}">${r.t.fell}</span><div class="cell-sub">${signpct(m1.drawdown)} · ${m1.days_since_high}d</div>`;
+    const comeCell = `<span class="pill ${cls[r.t.comeback]}">${r.t.comeback}</span><div class="cell-sub">${rel?'to '+pct(rel.depth)+' · '+mo(rel.median_recovery_days)+'mo':'—'}</div>`;
     tr.innerHTML=`
       <td class="no"><span class="caret">${state.open===r.ticker?'▾':'▸'}</span>${idx+1}</td>
       <td class="co"><div class="tk">${r.ticker}</div><div class="nm">${r.name}</div></td>
-      <td class="sec">${r.sector}</td>
       <td class="num cell-fig">${fmtCap(r.mcap)}</td>
-      <td><span class="pill ${cls[r.t.fell]}">${r.t.fell}</span><div class="cell-sub">${signpct(m1.drawdown)} · ${m1.days_since_high}d</div></td>
-      <td><span class="pill ${cls[r.t.comeback]}">${r.t.comeback}</span><div class="cell-sub">${rel?'to '+pct(rel.depth)+' · '+mo(rel.median_recovery_days)+'mo':'—'}</div></td>
-      <td>${cheapCell}</td>
       <td>${bizCell}</td>
+      <td>${comeCell}</td>
+      <td>${cheapCell}</td>
+      <td>${fellCell}</td>
+      <td>${mispCell(r)}</td>
       <td>${analystCell(r.info)}</td>
       <td class="links"><div class="linkwrap">
         <a href="https://finance.yahoo.com/quote/${r.ticker}" target="_blank" rel="noopener" title="Yahoo Finance" onclick="event.stopPropagation()">Y!</a>
