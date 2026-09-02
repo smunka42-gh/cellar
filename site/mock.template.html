@@ -67,6 +67,14 @@ header{padding:34px 0 22px; border-bottom:1px solid var(--line)}
   padding:5px 11px; border-radius:999px; font-size:12.5px; cursor:pointer; font-weight:500;
   font-family:inherit; transition:all .12s}
 .chip:hover{border-color:var(--accent); color:var(--ink)}
+/* instant styled tooltips (from data-tip; see the title→data-tip conversion in JS) */
+[data-tip]{position:relative}
+[data-tip]:hover::after{content:attr(data-tip); position:absolute; left:0; bottom:calc(100% + 9px);
+  background:var(--ink); color:var(--paper); font-size:11px; font-weight:400; line-height:1.45; letter-spacing:0;
+  text-transform:none; padding:8px 11px; border-radius:8px; width:max-content; max-width:250px; white-space:normal;
+  z-index:80; box-shadow:0 4px 16px rgba(0,0,0,.28); pointer-events:none}
+[data-tip]:hover::before{content:''; position:absolute; left:16px; bottom:calc(100% + 3px);
+  border:6px solid transparent; border-top-color:var(--ink); z-index:80; pointer-events:none}
 .chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:#fff}
 :root[data-theme="dark"] .chip[aria-pressed="true"],
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#17130F}}
@@ -173,16 +181,6 @@ tr.row[aria-expanded="true"] .no .caret{opacity:1; color:var(--accent)}
 .hl-warn{color:var(--warn); font-weight:600}
 .hl-num{font-weight:700; font-variant-numeric:tabular-nums}
 
-/* column-adjust scaffold — only active with ?cols in the URL (temporary tool) */
-.colhandle{position:absolute; top:0; right:-4px; width:9px; height:100%; cursor:col-resize; z-index:6}
-.colhandle:hover{background:var(--accent); opacity:.5}
-#colbar{position:fixed; left:0; right:0; bottom:0; z-index:60; background:var(--accent); color:#fff;
-  font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.7; padding:9px 16px;
-  box-shadow:0 -2px 12px rgba(0,0,0,.18)}
-#colbar code{background:rgba(255,255,255,.18); color:#fff; padding:1px 6px; border-radius:4px; font-weight:600}
-#colbar b{font-family:"Libre Franklin",system-ui,sans-serif}
-#colreset{margin-left:10px; background:#fff; color:var(--accent); border:none; border-radius:6px;
-  padding:3px 12px; font-family:"Libre Franklin",system-ui,sans-serif; font-weight:600; font-size:11px; cursor:pointer}
 .exp{color:var(--faint); font-family:"IBM Plex Mono",monospace; font-size:15px; width:20px; text-align:center}
 tr.row[aria-expanded="true"] .exp{color:var(--accent)}
 
@@ -336,6 +334,8 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
         <button class="chip" data-v="Strong" title="Today's dip is within the depth it reliably recovers from">Strong</button><button class="chip" data-v="Past" title="It reliably recovers, but today's dip is deeper than that proven floor">Past floor</button><button class="chip" data-v="None" title="No reliable recovery record at any depth">None</button></div></div>
       <div class="fgroup"><span class="flabel" title="Whether today is a genuine discount, on its own price and on its own earnings (M3 × M6)">Cheap?</span><div class="chips" data-dim="cheap">
         <button class="chip" data-v="Both" title="Cheap on both its own price history and its own earnings — strongest">Both</button><button class="chip" data-v="Growing in" title="Price flat or up but earnings rising — growing into its price (a price-only view misses this)">Growing in</button><button class="chip" data-v="Trap risk" title="Price fell but earnings fell more — a possible value trap">Trap risk</button><button class="chip" data-v="Full" title="Fully priced — not a discount on price or earnings">Full</button></div></div>
+      <div class="fgroup"><span class="flabel" title="The mispricing test (M5): did the business hold up around the fall, or decline?">Mispriced?</span><div class="chips" data-dim="mispriced">
+        <button class="chip" data-v="Held up" title="Fundamentals held up around the fall — a true mispricing">Held up</button><button class="chip" data-v="Declining" title="Fundamentals declined around the fall — an earned fall, not a mispricing">Declining</button><button class="chip" data-v="No read" title="No timely quarterly comparison available">No read</button></div></div>
       <div class="fgroup"><span class="flabel" title="Relative quality vs its GICS peers, across nine fundamentals over the decade (M4)">Good business?</span><div class="chips" data-dim="business">
         <button class="chip" data-v="High" title="Top-tier quality vs its GICS peers, consistent even in its worst year">High</button><button class="chip" data-v="Solid" title="Above-average quality vs its peers">Solid</button><button class="chip" data-v="Mixed" title="Middling quality vs its peers">Mixed</button><button class="chip" data-v="Weak" title="Below-average quality vs its peers">Weak</button></div></div>
       <div class="fgroup"><span class="flabel" title="The absolute gate (M7): is it worth owning at all, regardless of price?">Hoarding floor</span><div class="chips" data-dim="floor">
@@ -504,6 +504,7 @@ RAW.forEach(r=>{
   const cr=cheapRead(r); r.cr=cr;
   r.t.cheap = cr.cell==='priceonly' ? 'priceonly' : CHEAP_PILL[cr.cell].label;
   r.t.business = (r.m4 && r.m4.available) ? r.m4.tier : 'Limited';   // Good business? tier
+  r.t.mispriced = (r.m5 && r.m5.available) ? (r.m5.status==='held_up'?'Held up':'Declining') : 'No read';  // M5
   r.t.floor = (r.m7 && r.m7.available) ? (r.m7.clears ? 'Clears' : 'Below') : 'Unknown';  // hoarding floor
   // Combined cheapness for the "cheapest" sort — higher = better buy. Rank by
   // cell (both > growing > trap > full), then by earnings-yield percentile;
@@ -522,8 +523,8 @@ RAW.forEach(r=>{
     !(r.m5 && r.m5.available && r.m5.status==='declining');
 });
 
-const FILTER_DIMS = ['fell','comeback','cheap','business','floor','cap'];
-const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),floor:new Set(),cap:new Set()},q:'',analystMax:null,view:'buy',sort:'fell',dir:1,open:null};
+const FILTER_DIMS = ['fell','comeback','cheap','mispriced','business','floor','cap'];
+const state={filters:{fell:new Set(),comeback:new Set(),cheap:new Set(),mispriced:new Set(),business:new Set(),floor:new Set(),cap:new Set()},q:'',analystMax:null,view:'buy',sort:'fell',dir:1,open:null};
 
 function matches(r){
   // Buy list = the curated shortlist, full stop. "All" = the whole universe with
@@ -979,7 +980,7 @@ function markSort(){
 document.querySelectorAll('#viewtoggle .vbtn').forEach(b=>b.addEventListener('click',()=>{
   state.view=b.dataset.view;
   if(state.view==='buy'){
-    state.filters={fell:new Set(),comeback:new Set(),cheap:new Set(),business:new Set(),floor:new Set(),cap:new Set()};
+    state.filters={fell:new Set(),comeback:new Set(),cheap:new Set(),mispriced:new Set(),business:new Set(),floor:new Set(),cap:new Set()};
     state.q=''; document.getElementById('q').value='';
     state.analystMax=null; const sl=document.getElementById('anslider'); if(sl){sl.value=5; document.getElementById('anval').textContent='any';}
     document.querySelectorAll('.chips[data-dim] .chip').forEach(c=>c.setAttribute('aria-pressed','false'));
@@ -993,32 +994,8 @@ document.querySelectorAll('th[data-sort]').forEach(th=>th.addEventListener('clic
 markSort();
 render();
 
-// ── Column-width adjust tool — TEMPORARY scaffold, gated behind ?cols (or #cols).
-// Drag the dividers between headers; the bottom bar prints live widths to read
-// back to Claude, who freezes them into the <colgroup> and deletes this block.
-if(/cols/.test(location.search) || /cols/.test(location.hash)){
-  const table=document.querySelector('table.tbl');
-  const cols=[...table.querySelectorAll('colgroup col')];
-  const ths=[...table.querySelectorAll('thead th')];
-  const labels=['No.','Company','Sector','Mkt cap','Fell','Comes back','Cheap','Good biz','Links'];
-  const original=cols.map(c=>c.style.width);    // remember the starting widths for Reset
-  const bar=document.createElement('div'); bar.id='colbar'; document.body.appendChild(bar);
-  const pcts=()=>{ const tw=table.getBoundingClientRect().width; return ths.map(th=>th.getBoundingClientRect().width/tw*100); };
-  const paint=()=>{ bar.innerHTML='<b>Column-adjust mode</b> — drag the dividers, then read these to Claude: '
-      + pcts().map((x,i)=>`${labels[i]} <code>${x.toFixed(1)}%</code>`).join('  ·  ')
-      + ' <button id="colreset">Reset widths</button>';
-    bar.querySelector('#colreset').addEventListener('click',()=>{ cols.forEach((c,i)=>c.style.width=original[i]); paint(); }); };
-  ths.forEach((th,i)=>{ if(i>=ths.length-1) return;
-    const h=document.createElement('div'); h.className='colhandle'; th.appendChild(h);
-    h.addEventListener('click',e=>e.stopPropagation());   // don't trigger the column sort
-    h.addEventListener('mousedown',e=>{ e.preventDefault(); e.stopPropagation();
-      const x0=e.clientX, tw=table.getBoundingClientRect().width, start=pcts(), MIN=3;
-      const mm=ev=>{ let d=(ev.clientX-x0)/tw*100, a=start[i]+d, b=start[i+1]-d;
-        if(a<MIN){b-=MIN-a;a=MIN;} if(b<MIN){a-=MIN-b;b=MIN;}
-        cols[i].style.width=a+'%'; cols[i+1].style.width=b+'%'; paint(); };
-      const mu=()=>{ document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); };
-      document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu); });
-  });
-  paint();
-}
+// Turn the filter chips' native `title` attributes into instant, styled tooltips.
+document.querySelectorAll('.filters [title]').forEach(el=>{
+  el.dataset.tip=el.getAttribute('title'); el.removeAttribute('title');
+});
 </script>
