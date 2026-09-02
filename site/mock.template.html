@@ -149,6 +149,14 @@ tr.row[aria-expanded="true"] .no .caret{opacity:1; color:var(--accent)}
   text-transform:uppercase; letter-spacing:.07em; color:var(--faint);
   background:var(--surface); border:1px solid var(--line); padding:2px 8px; border-radius:20px}
 .vnarr{margin:9px 0 0; font-size:13.5px; line-height:1.6; color:var(--ink)}
+.profile{margin-bottom:12px}
+.profhead{font-family:"Fraunces",serif; font-weight:600; font-size:15px; color:var(--ink)}
+.profind{color:var(--muted); font-weight:400; font-size:12.5px; font-family:"Libre Franklin",sans-serif}
+.profsum{margin:5px 0 0; font-size:12.5px; line-height:1.6; color:var(--muted); max-width:75ch}
+.analystnote{margin:10px 0 0; padding:10px 13px; border:1px solid var(--line); border-radius:9px;
+  background:var(--raised); font-size:12.5px; line-height:1.55; color:var(--ink)}
+.anlabel{display:inline-block; font-size:10px; text-transform:uppercase; letter-spacing:.07em;
+  color:var(--faint); font-weight:600; margin-right:8px}
 .hl-good{color:var(--good); font-weight:600}
 .hl-warn{color:var(--warn); font-weight:600}
 .hl-num{font-weight:700; font-variant-numeric:tabular-nums}
@@ -336,11 +344,11 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
 
   <table class="tbl">
     <colgroup>
-      <col style="width:4%" ><!-- No.        --><col style="width:15%"><!-- Company   -->
-      <col style="width:11%"><!-- Sector     --><col style="width:8%" ><!-- Market cap-->
-      <col style="width:13%"><!-- Fell?      --><col style="width:14%"><!-- Comes back-->
-      <col style="width:16%"><!-- Cheap?     --><col style="width:11%"><!-- Good biz  -->
-      <col style="width:8%" ><!-- Links      -->
+      <col style="width:4%" ><!-- No.        --><col style="width:12%"><!-- Company   -->
+      <col style="width:10%"><!-- Sector     --><col style="width:8%" ><!-- Market cap-->
+      <col style="width:12%"><!-- Fell?      --><col style="width:13%"><!-- Comes back-->
+      <col style="width:15%"><!-- Cheap?     --><col style="width:11%"><!-- Good biz  -->
+      <col style="width:10%"><!-- Analysts   --><col style="width:5%" ><!-- Links      -->
     </colgroup>
     <thead><tr>
       <th>No.</th>
@@ -351,6 +359,7 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
       <th data-sort="comeback">Comes back?</th>
       <th data-sort="cheap">Cheap?</th>
       <th data-sort="business">Good business?</th>
+      <th data-sort="analyst" title="Wall Street analyst consensus (1 = Strong Buy … 5 = Strong Sell). Shown beside Cellar's contrarian read — a cautious consensus on a fallen quality name is the setup, not a veto.">Analysts</th>
       <th>Links</th>
     </tr></thead>
     <tbody id="tb"></tbody>
@@ -423,6 +432,17 @@ const m3Tier = m3 => m3.mode==='trend'
 
 // Quality (M4) tier → row-pill colour.
 const QUAL_PILL = {High:'t-good', Solid:'t-good', Mixed:'t-warn', Weak:'t-weak'};
+// Analyst consensus (yfinance recommendationMean: 1 Strong Buy … 5 Strong Sell).
+// Buy -> green, Hold -> neutral grey, Sell -> amber. Context, never a gate.
+const ANALYST_LAB = {strong_buy:'Strong Buy', buy:'Buy', hold:'Hold', sell:'Sell', strong_sell:'Strong Sell'};
+function analystLabel(info){ const rm=info&&info.rm; if(rm==null) return null;
+  return ANALYST_LAB[(info.rk||'')] || (rm<2.5?'Buy':rm<3.5?'Hold':'Sell'); }
+function analystCls(rm){ return rm<2.5?'t-good':(rm<3.5?'t-weak':'t-warn'); }
+function analystCell(info){
+  const rm=info&&info.rm;
+  if(rm==null) return `<span class="pill t-na">no coverage</span>`;
+  return `<span class="pill ${analystCls(rm)}">${analystLabel(info)}</span><div class="cell-sub">${rm.toFixed(1)} · ${info.rn||'?'}</div>`;
+}
 
 // The top-of-panel verdict — a deterministic read of the answers, led by the
 // HOARDING GATE (M7). If the business isn't worth hoarding, the dip, the
@@ -489,6 +509,7 @@ function sortKey(r){
     case 'comeback': return -(r.m2.reliable?r.m2.reliable.depth:0);
     case 'cheap': return -r.cheapScore;
     case 'business': return -((r.m4 && r.m4.available) ? r.m4.level : -1);
+    case 'analyst': return (r.info && r.info.rm!=null) ? r.info.rm : 99;   // most bullish (1) first
     case 'mcap': return -(r.mcap||0);
     default: return r.ticker;
   }
@@ -684,7 +705,31 @@ function detail(r){
   const summaryHtml = `<div class="readout ${v.cls}">
     <div class="verdict">${v.label}${v.hoard==='na'?'<span class="vtag">hoarding floor: unverified</span>':''}</div>
     <p class="vnarr">${s.join(' ')}</p></div>`;
-  return `<div class="panel">${summaryHtml}<div class="boxes">
+
+  // Company profile (top of panel, before the verdict) + the analyst-vs-Cellar
+  // framing — both from the cached .info pull.
+  const info = r.info || {};
+  const profileHtml = info.s
+    ? `<div class="profile"><div class="profhead">${r.ticker} · ${r.name}${info.ind?` · <span class="profind">${info.ind}</span>`:''}</div><p class="profsum">${info.s}</p></div>`
+    : '';
+  let analystNote = '';
+  if(info.rm!=null){
+    const lab=analystLabel(info), rmv=info.rm.toFixed(1), n=info.rn||'?';
+    const bullish=info.rm<2.5, cautious=info.rm>=2.5;
+    const cellarConstructive = !!(r.m7&&r.m7.available&&r.m7.clears) && r.t.fell!=='Minimal'
+      && r.m4 && r.m4.available && (r.m4.tier==='High'||r.m4.tier==='Solid');
+    let msg;
+    if(cellarConstructive && cautious)
+      msg=`Wall Street rates it <span class="hl-warn">${lab}</span> (${rmv}/5 · ${n} analysts) — and that caution is the <b>setup, not a veto</b>. Consensus cools on names that have already fallen; Cellar sees a sound business on sale for the very same reason. Same fact, opposite conclusion — the gap between them is the opportunity.`;
+    else if(cellarConstructive && bullish)
+      msg=`Wall Street agrees — <span class="hl-good">${lab}</span> (${rmv}/5 · ${n} analysts). Consensus and Cellar point the same way here.`;
+    else if(!cellarConstructive && bullish)
+      msg=`Wall Street is <span class="hl-good">${lab}</span> (${rmv}/5 · ${n}), but Cellar is more reserved — this isn't the fallen-but-sound mispricing it hunts for.`;
+    else
+      msg=`Wall Street rates it <span class="hl-warn">${lab}</span> (${rmv}/5 · ${n} analysts); Cellar is cautious here too.`;
+    analystNote=`<div class="analystnote"><span class="anlabel">Analysts × Cellar</span><span class="anmsg">${msg}</span></div>`;
+  }
+  return `<div class="panel">${profileHtml}${summaryHtml}${analystNote}<div class="boxes">
     <div class="chartwrap">
       <div class="charthead">
         <span class="chartname">${r.ticker} · ${r.name}</span>
@@ -818,6 +863,7 @@ function render(){
       <td><span class="pill ${cls[r.t.comeback]}">${r.t.comeback}</span><div class="cell-sub">${rel?'to '+pct(rel.depth)+' · '+mo(rel.median_recovery_days)+'mo':'—'}</div></td>
       <td>${cheapCell}</td>
       <td>${bizCell}</td>
+      <td>${analystCell(r.info)}</td>
       <td class="links">
         <a href="https://finance.yahoo.com/quote/${r.ticker}" target="_blank" rel="noopener" title="Yahoo Finance" onclick="event.stopPropagation()">Y!</a>
         <a href="https://www.google.com/finance/quote/${r.ticker}" target="_blank" rel="noopener" title="Google Finance" onclick="event.stopPropagation()">G</a></td>`;
@@ -827,7 +873,7 @@ function render(){
     frag.appendChild(tr);
     if(state.open===r.ticker){
       const dr=document.createElement('tr'); dr.className='detail';
-      dr.innerHTML=`<td colspan="9">${detail(r)}</td>`; frag.appendChild(dr);
+      dr.innerHTML=`<td colspan="10">${detail(r)}</td>`; frag.appendChild(dr);
     }
   });
   tb.appendChild(frag);

@@ -51,6 +51,7 @@ jobs:
             data/splits
             data/facts
             data/market_cap.json
+            data/info.json
           key: cellar-data-${{ github.run_id }}
           restore-keys: |
             cellar-data-
@@ -70,6 +71,15 @@ jobs:
 
       - name: Refresh fundamentals for recent filers
         run: python scripts/refresh_facts.py
+
+      - name: Refresh profiles + analyst ratings (weekly)
+        run: |
+          if [ ! -f data/info.json ] || [ $(( ($(date +%s) - $(stat -c %Y data/info.json 2>/dev/null || echo 0)) / 86400 )) -ge 6 ]; then
+            echo "::notice::info stale or missing — pulling profiles + analyst ratings"
+            python scripts/pull_info.py
+          else
+            echo "info fresh (< 6 days) — skipping"
+          fi
 
       - name: Compute measures (M1-M7)
         run: python scripts/run_dip.py
@@ -106,4 +116,5 @@ jobs:
             data/splits
             data/facts
             data/market_cap.json
+            data/info.json
           key: cellar-data-${{ github.run_id }}

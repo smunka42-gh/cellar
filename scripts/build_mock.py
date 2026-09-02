@@ -26,6 +26,13 @@ def main() -> None:
         r["filings"] = filings.get(r["ticker"], [])
     print(f"filings attached for {sum(1 for r in results if r['filings'])} companies")
 
+    # Company profile + analyst consensus (one .info pull, cached in info.json).
+    info_file = DATA / "info.json"
+    info = json.loads(info_file.read_text()) if info_file.exists() and info_file.stat().st_size else {}
+    for r in results:
+        r["info"] = info.get(r["ticker"], {})
+    print(f"info attached for {sum(1 for r in results if r['info'])} companies")
+
     # Escape "<" so a company name can never close the <script> block early;
     # "<" is still valid JSON, so JSON.parse reads it back unchanged.
     payload = json.dumps(results).replace("<", "\\u003c")
