@@ -189,6 +189,11 @@ tr.detail td{padding:0; background:var(--raised); border-bottom:1px solid var(--
 .box{background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:15px 16px; box-shadow:var(--shadow)}
 .box.floor-clear{border-left:4px solid var(--good)}   /* the hoarding gate: clears */
 .box.floor-below{border-left:4px solid var(--warn)}   /* the hoarding gate: below */
+/* semantic left-border accent for every detail card: good / caution / neutral */
+.box.ac-good{border-left:4px solid var(--good)}
+.box.ac-warn{border-left:4px solid var(--warn)}
+.box.ac-weak{border-left:4px solid var(--weak)}
+.box.ac-accent{border-left:4px solid var(--accent)}
 .box h4{margin:0 0 3px; font-family:"Fraunces",serif; font-weight:600; font-size:15px}
 .box .q{color:var(--faint); font-size:11px; text-transform:uppercase; letter-spacing:.07em; margin-bottom:10px}
 .box p{margin:9px 0 0; font-size:13px; color:var(--ink)}
@@ -526,6 +531,12 @@ function fmtMcap(){return '';}
 
 function detail(r){
   const m1=r.m1,m2=r.m2,m3=r.m3, rel=m2.reliable, td=m2.today;
+  // Semantic left-border accent per card (good / caution / neutral), matching the
+  // good/warn/weak tokens — so the six cards read as one colour-coded set.
+  const acBiz  = (r.m4&&r.m4.available) ? ((r.m4.tier==='High'||r.m4.tier==='Solid')?'ac-good':r.m4.tier==='Mixed'?'ac-warn':'ac-weak') : 'ac-weak';
+  const acCome = r.t.comeback==='Strong'?'ac-good':r.t.comeback==='Past'?'ac-warn':'ac-weak';
+  const acCheap= (r.cr.cell==='both'||r.cr.cell==='growing')?'ac-good':r.cr.cell==='trap'?'ac-warn':'ac-weak';
+  const acMisp = (r.m5&&r.m5.available)?(r.m5.status==='held_up'?'ac-good':'ac-warn'):'ac-weak';
   const fresh = m1.days_since_high<=120?'a fresh drop': m1.days_since_high<=365?'a months-long slide':'a slow, multi-year slide';
   const floorPx = rel ? m1.high*(1-rel.depth) : null;
   let comeHtml;
@@ -650,15 +661,15 @@ function detail(r){
   if(q && q.available){
     const bh={High:'High-quality business',Solid:'Solid business',Mixed:'Middling business',Weak:'Weak business'}[q.tier];
     const chips=Object.entries(q.ratio_level).sort((a,b)=>b[1]-a[1]).map(([nm,pc])=>`<span class="rl">${nm} <b>${pc}</b></span>`).join('');
-    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>${bh}</h4>
+    bizHtml=`<div class="box ${acBiz}"><div class="q">Good business?</div><h4>${bh}</h4>
       <p class="exwhy">Against <b>${q.peer_group}</b> peers (${q.peer_n}) it's typically the <b>${ord(q.level)} percentile</b>${q.consistency>=40?`, and <b>${ord(q.consistency)}</b> even in its worst year of the decade`:` — though its worst year dropped to the <b>${ord(q.consistency)}</b>`}.</p>
       <div class="rlwrap">${chips}</div>
       <div class="kv"><span class="k">Level / consistency</span><span class="v">${q.level}th / ${q.consistency}th</span></div>
       <div class="kv"><span class="k">Coverage <a class="cite" title="ratios / quality dimensions / years in the decade window">?</a></span><span class="v">${q.n_ratios}/9 · ${q.n_dims}/5 dims · ${q.n_years}/10 yr</span></div></div>`;
   } else if(q){
-    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>Limited data</h4><p class="exwhy exna">Not enough fundamentals to rank quality — ${q.n_ratios} of 9 ratios over ${q.n_years} yr. Peer group: ${q.peer_group}.</p></div>`;
+    bizHtml=`<div class="box ${acBiz}"><div class="q">Good business?</div><h4>Limited data</h4><p class="exwhy exna">Not enough fundamentals to rank quality — ${q.n_ratios} of 9 ratios over ${q.n_years} yr. Peer group: ${q.peer_group}.</p></div>`;
   } else {
-    bizHtml=`<div class="box"><div class="q">Good business?</div><h4>—</h4><p class="exwhy exna">No quality reading.</p></div>`;
+    bizHtml=`<div class="box ${acBiz}"><div class="q">Good business?</div><h4>—</h4><p class="exwhy exna">No quality reading.</p></div>`;
   }
 
   // "Mispriced?" card (M5) — was the fall backed by real deterioration? — with
@@ -694,7 +705,7 @@ function detail(r){
     mispHead = '—';
     mispBody = `<p class="exwhy exna">No mispricing reading.</p>`;
   }
-  const mispHtml=`<div class="box"><div class="q">Mispriced?</div><h4>${mispHead}</h4>${mispBody}</div>`;
+  const mispHtml=`<div class="box ${acMisp}"><div class="q">Mispriced?</div><h4>${mispHead}</h4>${mispBody}</div>`;
   // Recent coverage — its OWN full-width card below the six, so it isn't read as
   // part of the mispricing verdict and doesn't distort the card grid. Publisher
   // headlines only; Cellar never authors or interprets them.
@@ -780,11 +791,11 @@ function detail(r){
     </div>
     ${hoardHtml}
     ${bizHtml}
-    <div class="box"><div class="q">Comes back?</div><h4>${rel?'Reliable to '+pct(rel.depth):'No reliable floor'}</h4>${comeHtml}</div>
-    <div class="box"><div class="q">Cheap?</div><h4>${cheapHead}</h4>
+    <div class="box ${acCome}"><div class="q">Comes back?</div><h4>${rel?'Reliable to '+pct(rel.depth):'No reliable floor'}</h4>${comeHtml}</div>
+    <div class="box ${acCheap}"><div class="q">Cheap?</div><h4>${cheapHead}</h4>
       <div class="subh">On price · vs its own history</div>${cheapHtml}
       <div class="subh">On earnings · vs its own history</div>${earnHtml}</div>
-    <div class="box"><div class="q">Fell?</div><h4>Down ${pct(Math.abs(m1.drawdown))} from its ${m1.high_window_years}-year high</h4>
+    <div class="box ac-accent"><div class="q">Fell?</div><h4>Down ${pct(Math.abs(m1.drawdown))} from its ${m1.high_window_years}-year high</h4>
       <p class="exwhy">Its ${m1.high_window_years}-year high was <b>$${m1.high.toFixed(m1.high<20?2:0)}</b> on ${m1.high_date} — ${m1.days_since_high} days ago, ${fresh}. (The dip is measured from the recent high, not an ancient one.)</p>
       <div class="kv"><span class="k">Latest close</span><span class="v">$${m1.last.toFixed(m1.last<20?2:0)}</span></div>
       <div class="kv"><span class="k">Below its ${m1.high_window_years}-year high</span><span class="v">${signpct(m1.drawdown)}</span></div>
