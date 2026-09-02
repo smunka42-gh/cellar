@@ -5,3 +5,4 @@ requests
 certifi
 lxml
 html5lib
+tzdata

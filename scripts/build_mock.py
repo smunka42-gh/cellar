@@ -9,6 +9,9 @@ from __future__ import annotations
 import datetime as dt
 import json
 from pathlib import Path
+from zoneinfo import ZoneInfo
+
+HOUSTON = ZoneInfo("America/Chicago")   # Central Time (Houston)
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
@@ -36,7 +39,8 @@ def main() -> None:
     # Escape "<" so a company name can never close the <script> block early;
     # "<" is still valid JSON, so JSON.parse reads it back unchanged.
     payload = json.dumps(results).replace("<", "\\u003c")
-    asof = dt.date.today().strftime("%d %b %Y")
+    # Refresh timestamp in Houston (Central) time — when this build ran.
+    asof = dt.datetime.now(HOUSTON).strftime("%d %b %Y, %-I:%M %p %Z")
 
     html = template.replace("__DATA__", payload).replace("__ASOF__", asof)
     out = DATA / "mock.html"
