@@ -152,11 +152,19 @@ tr.row[aria-expanded="true"] .no .caret{opacity:1; color:var(--accent)}
 .profile{margin-bottom:12px}
 .profhead{font-family:"Fraunces",serif; font-weight:600; font-size:15px; color:var(--ink)}
 .profind{color:var(--muted); font-weight:400; font-size:12.5px; font-family:"Libre Franklin",sans-serif}
-.profsum{margin:5px 0 0; font-size:12.5px; line-height:1.6; color:var(--muted); max-width:75ch}
-.analystnote{margin:10px 0 0; padding:10px 13px; border:1px solid var(--line); border-radius:9px;
-  background:var(--raised); font-size:12.5px; line-height:1.55; color:var(--ink)}
+.profsum{margin:5px 0 0; font-size:12.5px; line-height:1.6; color:var(--muted)}
+.anverdict{margin-top:11px; padding-top:11px; border-top:1px solid var(--line); font-size:12.5px; line-height:1.6}
+.proscons{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px}
+.pccol{border:1px solid var(--line); border-radius:10px; padding:13px 16px; background:var(--surface); box-shadow:var(--shadow)}
+.pc-for{border-left:3px solid var(--good)} .pc-against{border-left:3px solid var(--warn)}
+.pchead{font-size:11px; text-transform:uppercase; letter-spacing:.07em; font-weight:600; margin-bottom:9px}
+.pc-for .pchead{color:var(--good)} .pc-against .pchead{color:var(--warn)}
+.proscons ul{margin:0; padding-left:17px; display:flex; flex-direction:column; gap:7px}
+.proscons li{font-size:12.5px; line-height:1.45; color:var(--ink)}
+.proscons .pcnone{list-style:none; margin-left:-17px; color:var(--faint); font-style:italic}
+@media(max-width:640px){.proscons{grid-template-columns:1fr}}
 .anlabel{display:inline-block; font-size:10px; text-transform:uppercase; letter-spacing:.07em;
-  color:var(--faint); font-weight:600; margin-right:8px}
+  color:var(--faint); font-weight:600; margin-right:7px}
 .hl-good{color:var(--good); font-weight:600}
 .hl-warn{color:var(--warn); font-weight:600}
 .hl-num{font-weight:700; font-variant-numeric:tabular-nums}
@@ -344,9 +352,9 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
 
   <table class="tbl">
     <colgroup>
-      <col style="width:4%" ><!-- No.        --><col style="width:12%"><!-- Company   -->
-      <col style="width:10%"><!-- Sector     --><col style="width:8%" ><!-- Market cap-->
-      <col style="width:12%"><!-- Fell?      --><col style="width:13%"><!-- Comes back-->
+      <col style="width:4%" ><!-- No.        --><col style="width:10%"><!-- Company   -->
+      <col style="width:11%"><!-- Sector     --><col style="width:8%" ><!-- Market cap-->
+      <col style="width:12%"><!-- Fell?      --><col style="width:14%"><!-- Comes back-->
       <col style="width:15%"><!-- Cheap?     --><col style="width:11%"><!-- Good biz  -->
       <col style="width:10%"><!-- Analysts   --><col style="width:5%" ><!-- Links      -->
     </colgroup>
@@ -702,34 +710,63 @@ function detail(r){
   }
   const filingsCard=`<div class="newscard"><div class="cvhead"><div class="q">Recent SEC filings</div><a class="yhlink" href="${yahooNews}" target="_blank" rel="noopener">Full coverage on Yahoo Finance →</a></div><div class="fnote">Material filings since its last periodic report — the company's own disclosures, straight from SEC EDGAR.</div><div class="filinglist">${filingsRows}</div></div>`;
 
-  const summaryHtml = `<div class="readout ${v.cls}">
-    <div class="verdict">${v.label}${v.hoard==='na'?'<span class="vtag">hoarding floor: unverified</span>':''}</div>
-    <p class="vnarr">${s.join(' ')}</p></div>`;
-
-  // Company profile (top of panel, before the verdict) + the analyst-vs-Cellar
-  // framing — both from the cached .info pull.
+  // Company profile (top of panel) + the analyst-vs-Cellar framing (both from the
+  // cached .info pull). The analyst framing is a 2nd paragraph inside the verdict
+  // box, so it inherits the colour-coded prominence.
   const info = r.info || {};
   const profileHtml = info.s
     ? `<div class="profile"><div class="profhead">${r.ticker} · ${r.name}${info.ind?` · <span class="profind">${info.ind}</span>`:''}</div><p class="profsum">${info.s}</p></div>`
     : '';
-  let analystNote = '';
+  let analystMsg = '';
   if(info.rm!=null){
     const lab=analystLabel(info), rmv=info.rm.toFixed(1), n=info.rn||'?';
     const bullish=info.rm<2.5, cautious=info.rm>=2.5;
     const cellarConstructive = !!(r.m7&&r.m7.available&&r.m7.clears) && r.t.fell!=='Minimal'
       && r.m4 && r.m4.available && (r.m4.tier==='High'||r.m4.tier==='Solid');
-    let msg;
     if(cellarConstructive && cautious)
-      msg=`Wall Street rates it <span class="hl-warn">${lab}</span> (${rmv}/5 · ${n} analysts) — and that caution is the <b>setup, not a veto</b>. Consensus cools on names that have already fallen; Cellar sees a sound business on sale for the very same reason. Same fact, opposite conclusion — the gap between them is the opportunity.`;
+      analystMsg=`Wall Street rates it <b>${lab}</b> (${rmv}/5 · ${n} analysts) — and that caution is the <b>setup, not a veto</b>. Consensus cools on names that have already fallen; Cellar sees a sound business on sale for the very same reason. Same fact, opposite conclusion — the gap between them is the opportunity.`;
     else if(cellarConstructive && bullish)
-      msg=`Wall Street agrees — <span class="hl-good">${lab}</span> (${rmv}/5 · ${n} analysts). Consensus and Cellar point the same way here.`;
+      analystMsg=`Wall Street agrees — <b>${lab}</b> (${rmv}/5 · ${n} analysts). Consensus and Cellar point the same way here.`;
     else if(!cellarConstructive && bullish)
-      msg=`Wall Street is <span class="hl-good">${lab}</span> (${rmv}/5 · ${n}), but Cellar is more reserved — this isn't the fallen-but-sound mispricing it hunts for.`;
+      analystMsg=`Wall Street is <b>${lab}</b> (${rmv}/5 · ${n}), but Cellar is more reserved — this isn't the fallen-but-sound mispricing it hunts for.`;
     else
-      msg=`Wall Street rates it <span class="hl-warn">${lab}</span> (${rmv}/5 · ${n} analysts); Cellar is cautious here too.`;
-    analystNote=`<div class="analystnote"><span class="anlabel">Analysts × Cellar</span><span class="anmsg">${msg}</span></div>`;
+      analystMsg=`Wall Street rates it <b>${lab}</b> (${rmv}/5 · ${n} analysts); Cellar is cautious here too.`;
   }
-  return `<div class="panel">${profileHtml}${summaryHtml}${analystNote}<div class="boxes">
+  const summaryHtml = `<div class="readout ${v.cls}">
+    <div class="verdict">${v.label}${v.hoard==='na'?'<span class="vtag">hoarding floor: unverified</span>':''}</div>
+    <p class="vnarr">${s.join(' ')}</p>
+    ${analystMsg?`<p class="vnarr anverdict"><span class="anlabel">Analysts × Cellar</span> ${analystMsg}</p>`:''}</div>`;
+  // "Working for it / against it" — a scannable pro/con derived deterministically
+  // from the signals we already compute (a two-column re-expression of the verdict;
+  // no new data, no LLM).
+  const _pros=[], _cons=[];
+  { const q=r.m4, mm5=r.m5, mm6=r.m6, mm7=r.m7, rl=r.m2&&r.m2.reliable, cr=r.cr||{}, inf=r.info||{};
+    if(mm7&&mm7.available&&mm7.clears) _pros.push('Clears the hoarding floor — profitable, cash-generative, debt serviceable');
+    if(rl && r.t.comeback==='Strong') _pros.push(`Reliably recovers from drops this deep — to ${pct(rl.depth)}, ${rl.occurrences}× on record`);
+    if(q&&q.available&&(q.tier==='High'||q.tier==='Solid')) _pros.push(`${q.tier}-quality business — ${ord(q.level)} percentile vs ${q.peer_group} peers`);
+    if(cr.cell==='both') _pros.push('Cheap on both price and earnings vs its own history');
+    else if(cr.cell==='growing') _pros.push('Growing into its price — earnings rising faster than the stock');
+    if(mm5&&mm5.available&&mm5.status==='held_up'&&r.t.fell!=='Minimal') _pros.push('Fell, but fundamentals held up year-on-year — a mispricing');
+    if(mm6&&mm6.available&&mm6.cheap_pctile_full>=80) _pros.push(`Unusually cheap on earnings — ${ord(mm6.cheap_pctile_full)} percentile of its own history`);
+    if(inf.rm!=null&&inf.rm<2.5) _pros.push(`Analysts lean positive (${inf.rm.toFixed(1)}/5)`);
+
+    if(mm7&&mm7.available&&!mm7.clears) _cons.push('Below the hoarding floor — not sound enough to own at all');
+    if(mm5&&mm5.available&&mm5.status==='declining'){ const nums=[mm5.rev_yoy!=null?`rev ${signpct(mm5.rev_yoy)}`:null,mm5.ni_yoy!=null?`earnings ${signpct(mm5.ni_yoy)}`:null].filter(Boolean).join(' · '); _cons.push(`Fundamentals declining — ${nums} year-on-year`); }
+    if(mm5&&mm5.outlier) _cons.push('Latest earnings swing is unusually large — likely a one-off, read with low confidence');
+    if(q&&q.available&&(q.tier==='Mixed'||q.tier==='Weak')) _cons.push(`${q.tier} quality vs ${q.peer_group} peers`);
+    if(cr.cell==='trap') _cons.push('Value-trap risk — price fell but earnings fell more');
+    if(rl && r.t.comeback==='Past') _cons.push("Today's dip is deeper than the depth it reliably recovers from");
+    if(!rl) _cons.push('No reliable recovery record at any depth');
+    if(r.m1 && Math.abs(r.m1.drawdown)>=0.2 && r.m1.days_since_high>500) _cons.push(`Deep, stale slide — down ${pct(Math.abs(r.m1.drawdown))} for ${Math.round(r.m1.days_since_high/30)}+ months`);
+    if(inf.rm!=null&&inf.rm>3.5) _cons.push(`Analysts lean negative (${inf.rm.toFixed(1)}/5)`);
+    const adv=(r.filings||[]).find(f=>/Restructuring|impairment|Restatement|auditor|Delisting/i.test(f.label));
+    if(adv) _cons.push(`Recent filing: ${adv.label} (${adv.d})`);
+  }
+  const _li=a=>a.map(x=>`<li>${x}</li>`).join('');
+  const prosConsHtml = `<div class="proscons">
+    <div class="pccol pc-for"><div class="pchead">Working for it</div><ul>${_pros.length?_li(_pros):'<li class="pcnone">—</li>'}</ul></div>
+    <div class="pccol pc-against"><div class="pchead">Working against it</div><ul>${_cons.length?_li(_cons):'<li class="pcnone">Nothing notable against it</li>'}</ul></div></div>`;
+  return `<div class="panel">${profileHtml}${summaryHtml}${prosConsHtml}<div class="boxes">
     <div class="chartwrap">
       <div class="charthead">
         <span class="chartname">${r.ticker} · ${r.name}</span>

@@ -28,15 +28,45 @@ INFO = DATA / "info.json"
 SUMMARY_CAP = 900
 
 
+def _key(rm):
+    """Derive a rating label from the mean (yfinance's own recommendationKey is
+    unreliable — often 'none' even when a breakdown exists)."""
+    if rm is None:
+        return ""
+    return ("strong_buy" if rm < 1.5 else "buy" if rm < 2.5 else
+            "hold" if rm < 3.5 else "sell" if rm < 4.5 else "strong_sell")
+
+
 def one(tk: str) -> dict:
-    i = yf.Ticker(tk).info or {}
-    rm = i.get("recommendationMean")
+    t = yf.Ticker(tk)
+    i = t.info or {}
+    rm = rn = None
+    # Primary: the analyst breakdown (strongBuy/buy/hold/sell/strongSell counts) —
+    # far more complete than .info's recommendationMean (which is None even for
+    # heavily-covered names like JPM/BAC). Compute the 1-5 mean from it.
+    try:
+        rs = t.recommendations
+        if rs is not None and len(rs):
+            row = rs.iloc[0]
+            sb, b, h, s, ss = (int(row.get(k, 0) or 0) for k in
+                               ("strongBuy", "buy", "hold", "sell", "strongSell"))
+            tot = sb + b + h + s + ss
+            if tot:
+                rm = round((1*sb + 2*b + 3*h + 4*s + 5*ss) / tot, 2)
+                rn = tot
+    except Exception:
+        pass
+    if rm is None:                                   # fallback: .info's own field
+        m = i.get("recommendationMean")
+        if m:
+            rm = round(float(m), 2)
+            rn = i.get("numberOfAnalystOpinions")
     return {
         "s": (i.get("longBusinessSummary") or "").strip()[:SUMMARY_CAP],
         "ind": (i.get("industry") or "").strip(),
-        "rm": round(float(rm), 2) if rm else None,
-        "rk": (i.get("recommendationKey") or "").strip(),
-        "rn": i.get("numberOfAnalystOpinions") or None,
+        "rm": rm,
+        "rk": _key(rm),
+        "rn": rn,
     }
 
 
