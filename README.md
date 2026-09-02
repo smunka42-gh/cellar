@@ -47,11 +47,13 @@ known data hazards.
 
 ### The Buy list
 
-The default view is a high-conviction shortlist — a company is in only if **all
-five** hold: it **clears the hoarding floor** (M7), **fell big** (M1), **reliably
+The default view is a **zero-doubt shortlist** — a company is in only if **all
+six** hold: it **clears the hoarding floor** (M7), **fell big** (M1), **reliably
 recovers** from depths this deep (M2 Strong), is **cheap on both price and
-earnings** (M3 × M6), and is a **high-quality** business (M4 High). Switch to
-**All** to filter and search the whole universe.
+earnings** (M3 × M6), is a **high-quality** business (M4 High), and **the fall is
+not backed by declining fundamentals** (M5 held up — a true mispricing, not an
+earned fall). The list is short by design — a handful of unambiguous names beats
+a long hedged one. Switch to **All** to filter and search the whole universe.
 
 ## How it runs
 

@@ -219,12 +219,19 @@ filing but whether the latest fundamentals **declined or held up**:
 is unreliable (a bank's quarterly figures come and go under shifting concepts).
 Recent listings with no year-ago comparable read *no timely read*. Everything
 carries an **"as of [quarter-end]"** stamp. It shows on its own **Mispriced?
-card** and as a clause in the verdict — a *declining* read **tempers** even a
-cheap, resilient, floor-clearing name; a *held-up* read **strengthens** the buy
-case. It does not hard-gate the buy list (M7 is the hard gate); it is an early
-warning. Calibrated + validated on a fell-on-bad-news vs. fell-on-nothing basket
-(Nike/Lululemon/Intel → declining; Costco/Google/recovered-Target → held up).
-~24% of the universe reads declining. `[calibrate: the thresholds]`
+card** and in the verdict. **M5 is a hard gate on the buy list**: a *declining*
+read means the fall is *earned*, not a mispricing — the opposite of what Cellar
+hunts for — so the name is **excluded from the Buy list** and its verdict reads
+"the fall is backed by declining fundamentals — not a mispricing," however
+strong the rest looks. Only a *held-up* read (the fall came on no deterioration)
+can be a buy. This is deliberate: the Buy list is the **zero-doubt** set — better
+a handful of unambiguous names than a long hedged one. (One-off declines are
+imperfectly separated from real ones — the low-confidence flag below surfaces
+likely one-offs in the detail so they can be investigated, but they still don't
+earn a confident buy.) Calibrated + validated on a fell-on-bad-news vs.
+fell-on-nothing basket (Nike/Lululemon/Intel → declining; Costco/Google/
+recovered-Target → held up). ~24% of the universe reads declining.
+`[calibrate: the thresholds]`
 
 **Low-confidence (one-off) flag.** A single quarter's net income can crater — or
 spike — on a non-recurring item (a legal charge, a writedown, a tax item) with
@@ -377,17 +384,25 @@ not a separate measurement.
 
 ## 7 · Row output and the detailed panel
 
-**Collapsed row** — scannable: the four plain-language answers plus their
-tiers, market cap, and links (Yahoo, Google Finance). Below-floor names carry
-a "below floor" flag.
+**Collapsed row** — scannable: the plain-language answers plus their tiers,
+market cap, an **Analysts** column (Wall Street consensus, 1 Strong Buy … 5
+Strong Sell — Buy green / Hold grey / Sell amber), and links (Yahoo, Google
+Finance). Below-floor names carry a "below floor" flag.
 
-**Expanded panel** — opens with a **colour-coded verdict readout**: the
-deterministic call ("A dip worth hoarding" / "Not worth hoarding" / …) led by
-the hoarding gate, then a woven, evidence-highlighted narrative — every clause
-pinned to a computed value. Below it, the chart and **six cards read top to
-bottom as one sentence** — *this is worth hoarding, a good business, always
-comes back from these depths, currently cheap, did fall hard, and the fall
-is/isn't a mispricing*:
+**Expanded panel** — opens with the **company profile** (business summary +
+industry, from yfinance), then a **colour-coded verdict readout**: the
+deterministic call ("A dip worth hoarding" / "Not worth hoarding" / "The fall is
+backed by declining fundamentals — not a mispricing" / …) led by the hoarding
+gate and gated by the mispricing test, then a woven, evidence-highlighted
+narrative — every clause pinned to a computed value — closing with an **Analysts
+× Cellar** line that frames the consensus against Cellar's read (a cautious
+consensus on a fallen, sound, quality name is the setup, not a veto). Below the
+verdict, a scannable **"Working for it / Working against it"** card — a
+deterministic pro/con from the signals already computed (no new data, no LLM).
+Then the chart and **six cards read top to bottom as one sentence** — *this is
+worth hoarding, a good business, always comes back from these depths, currently
+cheap, did fall hard, and the fall is/isn't a mispricing* — each with a semantic
+left-border accent (good = green, caution = amber, neutral = claret):
 
 1. **Worth hoarding?** (M7, the gate, led first with a clears/below accent)
 2. **Good business?** (M4 relative quality vs peers)
@@ -417,12 +432,19 @@ un-auditable.
   M3×M6 cells of §5); Good business (High/Solid/Mixed/Weak — M4 quality); a
   **Hoarding floor** filter (Clears/Below — M7); and a **Size** tier
   (Mega ≥ $200B / Large / Mid / Small < $2B).
-- **Sort** — order the list (biggest dip, deepest reliable recovery, cheapest,
-  best business, market cap); column headers also sort.
-- **Buy list ⇄ All toggle.** The default is the **buy preset** (worth
-  hoarding + fell + reliably recovers + cheap + high quality). Switching to
-  **All**, or touching any filter or search, queries the whole ~1,394; the
-  toggle back to **Buy list** restores the preset and clears filters.
+- **Sort** — every column heading sorts (No./Company/Market cap/Fell?/Comes
+  back?/Cheap?/Good business?/Analysts), click to toggle direction, an arrow
+  marks the active column. (The old sort dropdown was removed as redundant.)
+- **Theme** — light / dark, defaulting to **Auto: dark after local sunset**
+  (estimated from the browser's timezone, no location prompt, no network); a
+  toggle (Auto → Light → Dark) overrides and is remembered per browser.
+- **Buy list ⇄ All toggle.** The default is the **zero-doubt Buy list** — a name
+  is in only if **all six** hold: clears the hoarding floor (M7) · fell big (M1) ·
+  reliably recovers from depths this deep (M2 Strong) · cheap on both price and
+  earnings (M3 × M6) · high quality (M4 High) · **the fall is not backed by
+  declining fundamentals (M5 held up — a true mispricing)**. The list is short by
+  design (a handful of unambiguous names). Switching to **All**, or touching any
+  filter or search, queries the whole ~1,394; the toggle back restores the preset.
 
 ---
 

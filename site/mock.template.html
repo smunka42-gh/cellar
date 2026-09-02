@@ -354,7 +354,7 @@ footer{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); colo
     <div class="stat"><div class="n"><em id="s-buy">—</em></div><div class="l">in today's buy view</div></div>
     <div class="stat"><div class="n" id="s-shown">—</div><div class="l">shown</div></div>
   </div>
-  <div class="note">Buy list = the high-conviction shortlist: it <b>clears the hoarding floor</b>, <b>fell big</b>, <b>reliably recovers</b> from depths this deep, is <b>cheap on both price and earnings</b>, and is a <b>high-quality</b> business. All five must hold.</div>
+  <div class="note">Buy list = the zero-doubt shortlist: it <b>clears the hoarding floor</b>, <b>fell big</b>, <b>reliably recovers</b> from depths this deep, is <b>cheap on both price and earnings</b>, is a <b>high-quality</b> business, and the fall is <b>not backed by declining fundamentals</b> (a true mispricing). Every one must hold — so the list is short by design.</div>
 
   <table class="tbl">
     <colgroup>
@@ -477,7 +477,11 @@ function verdict(r){
   if(cell==='full') return {label:'In its reliable range, but fully priced', cls:'v-warn', hoard};
   const priceGood = cell==='both' || cell==='growing' || (cell==='priceonly' && r.cr.priceCheap);
   if(!priceGood) return {label:'In its reliable range, not a discount', cls:'v-warn', hoard};
-  // 3 — worth hoarding, at a real entry. M4 is the relative-quality context.
+  // 3 — the mispricing gate: a dip explained by declining fundamentals is earned,
+  // not a mispricing — a clear NO, however good the rest looks.
+  if(r.m5 && r.m5.available && r.m5.status==='declining')
+    return {label:'The fall is backed by declining fundamentals — not a mispricing', cls:'v-warn', hoard};
+  // 4 — worth hoarding, at a real entry, on no deterioration. M4 is the context.
   const tier = (q && q.available) ? q.tier : null;
   if(tier==='Weak' || tier==='Mixed') return {label:'A dip, but only a middling business', cls:'v-warn', hoard};
   return {label:'A dip worth hoarding', cls:'v-good', hoard};   // High/Solid quality (or M4 n/a)
@@ -495,13 +499,15 @@ RAW.forEach(r=>{
   const priceFrac = Math.max(0, Math.min(1, r.m3.mode==='trend' ? -r.m3.vs_usual/0.30 : r.m3.room_10));
   const base = {both:4, growing:3, trap:2, full:1}[cr.cell];
   r.cheapScore = cr.eAvail ? base + cr.ep/100 : 1 + priceFrac;
-  // Buy view (high-conviction shortlist): worth hoarding (M7 clears the floor) +
+  // Buy view (the zero-doubt shortlist): worth hoarding (M7 clears the floor) +
   // fell BIG + reliably recovers (Strong) + cheap on BOTH price and earnings +
-  // top relative quality (M4 High). M7 is the hard gate; every clause must hold.
+  // top quality (M4 High) + the fall is NOT explained by declining fundamentals
+  // (M5 held up — a true mispricing, not an earned fall). Every clause must hold.
   r.isbuy = !!(r.m7 && r.m7.available && r.m7.clears) &&
     (r.t.fell==='Big') && (r.t.comeback==='Strong') &&
     (cr.cell==='both') &&
-    (r.m4 && r.m4.available && r.m4.tier==='High');
+    (r.m4 && r.m4.available && r.m4.tier==='High') &&
+    !(r.m5 && r.m5.available && r.m5.status==='declining');
 });
 
 const FILTER_DIMS = ['fell','comeback','cheap','business','floor','cap'];
